@@ -5,5 +5,6 @@ if [ ${DIB_DEBUG_TRACE:-0} -gt 0 ]; then
 fi
 set -euo pipefail
 
+APP_PY_VERSION="3.10.13"
 echo ">> create conda env '${COMFYUI_APP_NAME}'"
-conda create -y --name "${COMFYUI_APP_NAME}" python=3.10.13
+conda create -y --name "${COMFYUI_APP_NAME}" python=${APP_PY_VERSION}

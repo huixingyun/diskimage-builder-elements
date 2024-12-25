@@ -16,6 +16,6 @@ fi
 
 # if COMFYUI_DATA_FILE is not "-", then copy the file to the image
 if [ -n "${COMFYUI_DATA_FILE}" ] && [ "${COMFYUI_DATA_FILE}" != "-" ]; then
-    echo ">> Copy COMFYUI data file from HOST"
+    echo ">> Copy ${COMFYUI_APP_NAME} data file from HOST"
     cp "${COMFYUI_DATA_FILE}" "${TMP_MOUNT_PATH}/${COMFYUI_DATA_TAR}"
 fi
