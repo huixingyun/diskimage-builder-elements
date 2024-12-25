@@ -33,6 +33,6 @@
     DIB_NODE_EXPORTER_VER: "1.7.0"
     DIB_JUPYTERLAB_VER: "4.1.2"
     DIB_NVIDIA_DRIVER_VERSION: "555.42.06"
-    DIB_SD_WEBUI_FILE: "/root/public/apps/sd_webui/sd_webui_20240814.tar.xz"
-    DIB_SD_WEBUI_DATA_LINK_FILE: "/root/public/apps/sd_webui/sd_webui_20240814_data.tar"
+    DIB_SD_WEBUI_FILE: "/root/public/apps/sd_webui/sd_webui_20241225.tar"
+    DIB_SD_WEBUI_DATA_LINK_FILE: "-"
     DIB_FILEBROWSER_ROOT: "/root"

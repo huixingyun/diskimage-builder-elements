@@ -5,12 +5,13 @@ if [ ${DIB_DEBUG_TRACE:-0} -gt 0 ]; then
 fi
 set -euo pipefail
 
-echo ">> Install sd-webui"
+echo ">> Install ${SD_WEBUI_APP_NAME}"
 
 TAR_FILE=/tmp/$(basename ${SD_WEBUI_FILE})
 tar -xvf ${TAR_FILE} -C /root/
+rm -rf "${TAR_FILE}"
 
-ln -s /usr/local/bin/start_sd_webui /root/start_sd_webui
+ln -s "/usr/local/bin/${SD_WEBUI_START_SCRIPT}" "/root/${SD_WEBUI_START_SCRIPT}"
 
 # if SD_WEBUI_DATA_LINK_FILE is not "-"
 if [ -n "${SD_WEBUI_DATA_LINK_FILE}" ] && [ "${SD_WEBUI_DATA_LINK_FILE}" != "-" ]; then
