@@ -7,7 +7,10 @@ APP_PY_VERSION="3.10.13"
 APP_PORT=${SD_WEBUI_PORT:-"10000"}
 APP_DIR=${SD_WEBUI_DIR:-"${APP_HOME}/${APP_NAME}"}
 APP_VENV_DIR=${SD_WEBUI_VENV_DIR:-"${APP_DIR}/venv"}
-APP_DATA_VOLUME=${SD_WEBUI_DATA_VOLUME:-"${APP_HOME}/sd_data"}
+APP_DATA_VOLUME=${SD_WEBUI_DATA_VOLUME:-"${APP_HOME}/data"}
+
+# share data dir with ComfyUI
+SD_WEBUI_DATA_DIR="${APP_DATA_VOLUME}/ComfyUI"
 
 APP_DATA_TAR=${SD_WEBUI_DATA_TAR:-"/root/${APP_NAME}_data.tar"}
 APP_PUBLIC_DATA=${SD_WEBUI_PUBLIC_DATA:-"public-data:public/sd_data"}
@@ -15,7 +18,7 @@ APP_DATA_DIR=${SD_WEBUI_DATA_DIR:-"${APP_DATA_VOLUME}/${APP_NAME}"}
 APP_INIT_START="${APP_DATA_DIR}/.init-start"
 APP_INIT_DONE="${APP_DATA_DIR}/.init-done"
 
-CACHE="${APP_DATA_DIR}/.cache"
+CACHE="${APP_DIR}/.cache"
 CLIP_CACHE="${CACHE}/clip"
 export XDG_CACHE_HOME="${CACHE}"
 export HF_HOME="${CACHE}/huggingface"
@@ -64,29 +67,19 @@ if [ ! -f "${APP_INIT_DONE}" ]; then
     if rclone lsd "${APP_PUBLIC_DATA}" &>/dev/null; then
         echo "Syncing public data: from ${APP_PUBLIC_DATA}/ to ${APP_DATA_DIR}/"
 
-        # sync user data
-        # mkdir -p "${APP_DATA_DIR}/output"
-        # rclone copy --progress \
-        #     "${APP_PUBLIC_DATA}/extra_model_paths.yaml" \
-        #     "${APP_DATA_DIR}/"
-        # rclone sync --progress \
-        #     "${APP_PUBLIC_DATA}/user/" \
-        #     "${APP_DATA_DIR}/user/"
-
         # sync models from public data
         rclone sync --progress \
             "${APP_PUBLIC_DATA}/models/embeddings/" \
-            "${APP_DATA_DIR}/embeddings/"
+            "${APP_DATA_DIR}/models/embeddings/"
         rclone sync --progress \
             "${APP_PUBLIC_DATA}/models/vae/" \
-            "${APP_DATA_DIR}/models/VAE/"
+            "${APP_DATA_DIR}/models/vae/"
         rclone sync --progress \
             "${APP_PUBLIC_DATA}/models/vae_approx/" \
-            "${APP_DATA_DIR}/models/VAE-approx/"
+            "${APP_DATA_DIR}/models/vae_approx/"
         rclone sync --progress \
             "${APP_PUBLIC_DATA}/models/sams/" \
-            "${APP_DATA_DIR}/models/sam/"
-
+            "${APP_DATA_DIR}/models/sams/"
         # rclone sync --progress \
         #     "${APP_PUBLIC_DATA}/models/clip_vision/" \
         #     "${APP_DATA_DIR}/models/clip_vision/"
@@ -96,16 +89,15 @@ if [ ! -f "${APP_INIT_DONE}" ]; then
         # rclone sync --progress \
         #     "${APP_PUBLIC_DATA}/models/ultralytics/" \
         #     "${APP_DATA_DIR}/models/ultralytics/"
-        # rclone sync --progress \
-        #     "${APP_PUBLIC_DATA}/models/loras/" \
-        #     "${APP_DATA_DIR}/models/loras/"
-
+        rclone sync --progress \
+            "${APP_PUBLIC_DATA}/models/loras/" \
+            "${APP_DATA_DIR}/models/loras/"
         rclone sync --progress \
             "${APP_PUBLIC_DATA}/models/controlnet/" \
-            "${APP_DATA_DIR}/models/ControlNet/"
+            "${APP_DATA_DIR}/models/controlnet/"
         rclone sync --progress \
             "${APP_PUBLIC_DATA}/models/checkpoints/" \
-            "${APP_DATA_DIR}/models/Stable-diffusion/"
+            "${APP_DATA_DIR}/models/checkpoints/"
     fi
 
     # set a empty file to indicate init complete
@@ -137,11 +129,10 @@ cd "${APP_DIR}" && load_venv &&
     ./webui.sh -f \
         --listen \
         --port "${APP_PORT}" \
-        --data-dir "${APP_DATA_DIR}" \
+        --clip-models-path "${CLIP_CACHE}" \
         --enable-insecure-extension-access \
         --gradio-queue \
         --no-download-sd-model \
         --api \
         --xformers \
-        --clip-models-path "${CLIP_CACHE}" \
         $@
