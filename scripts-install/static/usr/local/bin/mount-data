@@ -19,12 +19,11 @@ trigger_mount_service "$partition" "$mount_point"
 # move default cache dir to data volume
 cache_dir="/root/.cache"
 linked_cache_dir="${mount_point}/.cache"
-if [ -d "${cache_dir}" ]; then
+if [ -L "${cache_dir}" ]; then
+    mkdir -p "$(readlink -f "${cache_dir}")"
+elif [ -d "${cache_dir}" ]; then
     mkdir -p "${linked_cache_dir}" &&
         rsync -ac "${cache_dir}/" "${linked_cache_dir}/" &&
         mv "${cache_dir}" "${cache_dir}.bak" &&
         ln -s "${linked_cache_dir}" "${cache_dir}"
-elif [ -L "${cache_dir}" ]; then
-    # create the actual target
-    mkdir -p "$(readlink -f "${cache_dir}")"
 fi

@@ -110,7 +110,7 @@ grow_partition() {
 
     # compare device size and partition size
     local device_size=$(lsblk -o SIZE -bnr "${device}" | head -n 1)
-    local partition_size=$(lsblk -o SIZE -bnr "${partition}")
+    local partition_size=$(df -B1 "${partition}" | awk 'NR==2 {print $2}')
     local diff_size=$((device_size - partition_size))
 
     # if diff_size <= 1GB, do nothing

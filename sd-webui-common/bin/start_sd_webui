@@ -1,26 +1,27 @@
 #!/usr/bin/env bash
 set -e
 
-APP_NAME="sd_webui"
-APP_DIR=${SD_WEBUI_DIR:-"/root/stable-diffusion-webui"}
+APP_NAME="stable-diffusion-webui"
+APP_HOME="/root"
+APP_PY_VERSION="3.10.13"
 APP_PORT=${SD_WEBUI_PORT:-"10000"}
-APP_DATA_TAR=${SD_WEBUI_DATA_TAR:-"/root/${APP_NAME}_data.tar"}
-APP_DATA_VOLUME=${SD_WEBUI_DATA_VOLUME:-"/root/data"}
+APP_DIR=${SD_WEBUI_DIR:-"${APP_HOME}/${APP_NAME}"}
 APP_VENV_DIR=${SD_WEBUI_VENV_DIR:-"${APP_DIR}/venv"}
-# share public data
+APP_DATA_VOLUME=${SD_WEBUI_DATA_VOLUME:-"${APP_HOME}/data"}
+
+# share data dir with ComfyUI
+SD_WEBUI_DATA_DIR="${APP_DATA_VOLUME}/ComfyUI"
+
+APP_DATA_TAR=${SD_WEBUI_DATA_TAR:-"/root/${APP_NAME}_data.tar"}
 APP_PUBLIC_DATA=${SD_WEBUI_PUBLIC_DATA:-"public-data:public/sd_data"}
+APP_DATA_DIR=${SD_WEBUI_DATA_DIR:-"${APP_DATA_VOLUME}/${APP_NAME}"}
+APP_INIT_START="${APP_DATA_DIR}/.init-start"
+APP_INIT_DONE="${APP_DATA_DIR}/.init-done"
 
-APP_DATA_DIR=${SD_WEBUI_DATA_DIR:-"${APP_DATA_VOLUME}/stable-diffusion-webui"}
-data_version="$(basename "$(readlink "${APP_DATA_TAR}")")"
-APP_INIT_START="${APP_DATA_DIR}/${data_version}.init-start"
-APP_INIT_DONE="${APP_DATA_DIR}/${data_version}.init-done"
-
-CACHE=${APP_DATA_DIR}/.cache
-CLIP_CACHE=${CACHE}/clip
-export XDG_CACHE_HOME=${CACHE}
-export HF_HOME=${CACHE}/huggingface
-export HF_DATASETS_CACHE=${HF_HOME}/datasets
-export TRANSFORMERS_CACHE=${HF_HOME}/transformers
+CACHE="${APP_DIR}/.cache"
+CLIP_CACHE="${CACHE}/clip"
+export XDG_CACHE_HOME="${CACHE}"
+export HF_HOME="${CACHE}/huggingface"
 
 if ! ldconfig -p | grep -q libtcmalloc_minimal.so.4; then
     echo "Installing libtcmalloc-minimal4"
@@ -31,73 +32,76 @@ fi
 # make sure conda env exist
 if ! $(conda env list | grep -q "${APP_NAME}"); then
     echo "Creating conda env '${APP_NAME}'"
-    conda create -y --name "${APP_NAME}" python=3.10.13
+    conda create -y --name "${APP_NAME}" python=${APP_PY_VERSION}
 fi
 
-# check if venv is a link file
-if [ -L "${APP_VENV_DIR}" ]; then
-    # try extract from existing tar file
-    if [ -f "${APP_DATA_TAR}" ] && ([ ! -d "$(readlink "${APP_VENV_DIR}")" ] || [ ! -f "${APP_INIT_DONE}" ]); then
-        echo "First launch will take some time, please be patient..."
+# prepare models files
+if [ ! -f "${APP_INIT_DONE}" ]; then
+    echo "First launch will take some time, please be patient..."
 
-        if [ -d "${APP_DATA_DIR}" ] && [ ! -z "ls -A ${APP_DATA_DIR}" ]; then
-            # last init not complete
-            if [ -f "${APP_INIT_START}" ] && [ ! -f "${APP_INIT_DONE}" ]; then
-                echo "Last init not complete, delete ${APP_DATA_DIR} and try again."
-                rm -rf "${APP_DATA_DIR}"
-            else
-                # rename the dir
-                BAK="${APP_DATA_DIR}_$(date +%s)"
-                echo "Renaming ${APP_DATA_DIR} to ${BAK}"
-                mv -v "${APP_DATA_DIR}" "${BAK}"
-            fi
+    if [ -d "${APP_DATA_DIR}" ] && [ ! -z "ls -A ${APP_DATA_DIR}" ]; then
+        # last init not complete
+        if [ -f "${APP_INIT_START}" ] && [ ! -f "${APP_INIT_DONE}" ]; then
+            echo "Last init not complete, delete ${APP_DATA_DIR} and try again."
+            rm -rf "${APP_DATA_DIR}"
+        else
+            # rename the dir
+            BAK="${APP_DATA_DIR}_$(date +%s)"
+            echo "Renaming ${APP_DATA_DIR} to ${BAK}"
+            mv -v "${APP_DATA_DIR}" "${BAK}"
         fi
+    fi
 
-        # set a empty file to indicate init start
-        mkdir -p "${APP_DATA_DIR}"
-        touch "${APP_INIT_START}"
+    # set a empty file to indicate init start
+    mkdir -p "${APP_DATA_DIR}"
+    touch "${APP_INIT_START}"
 
+    if [ -f "${APP_DATA_TAR}" ]; then
         echo "Uncompressing data from ${APP_DATA_TAR} to ${APP_DATA_VOLUME}"
         tar -xf "${APP_DATA_TAR}" -C "${APP_DATA_VOLUME}" \
             --checkpoint=$(($(stat -L -c %s "${APP_DATA_TAR}") / 512 / 20 / 100)) \
             --checkpoint-action=. &&
             echo "Done"
-
-        # sync public data
-        if rclone lsd "${APP_PUBLIC_DATA}" &>/dev/null; then
-            echo "Syncing public data: from ${APP_PUBLIC_DATA}/ to ${APP_DATA_DIR}/"
-            rclone sync --progress \
-                "${APP_PUBLIC_DATA}/models/embeddings/" \
-                "${APP_DATA_DIR}/embeddings/"
-            rclone sync --progress \
-                "${APP_PUBLIC_DATA}/models/checkpoints/" \
-                "${APP_DATA_DIR}/models/Stable-diffusion/"
-            rclone sync --progress \
-                "${APP_PUBLIC_DATA}/models/vae/" \
-                "${APP_DATA_DIR}/models/VAE/"
-            rclone sync --progress \
-                "${APP_PUBLIC_DATA}/models/vae_approx/" \
-                "${APP_DATA_DIR}/models/VAE-approx/"
-            rclone sync --progress \
-                "${APP_PUBLIC_DATA}/models/controlnet/" \
-                "${APP_DATA_DIR}/models/ControlNet/"
-            rclone sync --progress \
-                "${APP_PUBLIC_DATA}/models/sams/" \
-                "${APP_DATA_DIR}/models/sam/"
-        fi
-
-        # set a empty file to indicate init complete
-        touch "${APP_INIT_DONE}"
-
-    else
-        # check all link files in ${APP_DIR}, if link target dir not exist, create the target dir
-        for f in $(find "${APP_DIR}" -type l); do
-            target="$(readlink "${f}")"
-            if [ ! -d "${target}" ]; then
-                mkdir -p "${target}"
-            fi
-        done
     fi
+
+    if rclone lsd "${APP_PUBLIC_DATA}" &>/dev/null; then
+        echo "Syncing public data: from ${APP_PUBLIC_DATA}/ to ${APP_DATA_DIR}/"
+
+        # sync models from public data
+        rclone sync --progress \
+            "${APP_PUBLIC_DATA}/models/embeddings/" \
+            "${APP_DATA_DIR}/models/embeddings/"
+        rclone sync --progress \
+            "${APP_PUBLIC_DATA}/models/vae/" \
+            "${APP_DATA_DIR}/models/vae/"
+        rclone sync --progress \
+            "${APP_PUBLIC_DATA}/models/vae_approx/" \
+            "${APP_DATA_DIR}/models/vae_approx/"
+        rclone sync --progress \
+            "${APP_PUBLIC_DATA}/models/sams/" \
+            "${APP_DATA_DIR}/models/sams/"
+        # rclone sync --progress \
+        #     "${APP_PUBLIC_DATA}/models/clip_vision/" \
+        #     "${APP_DATA_DIR}/models/clip_vision/"
+        # rclone sync --progress \
+        #     "${APP_PUBLIC_DATA}/models/ipadapter/" \
+        #     "${APP_DATA_DIR}/models/ipadapter/"
+        # rclone sync --progress \
+        #     "${APP_PUBLIC_DATA}/models/ultralytics/" \
+        #     "${APP_DATA_DIR}/models/ultralytics/"
+        rclone sync --progress \
+            "${APP_PUBLIC_DATA}/models/loras/" \
+            "${APP_DATA_DIR}/models/loras/"
+        rclone sync --progress \
+            "${APP_PUBLIC_DATA}/models/controlnet/" \
+            "${APP_DATA_DIR}/models/controlnet/"
+        rclone sync --progress \
+            "${APP_PUBLIC_DATA}/models/checkpoints/" \
+            "${APP_DATA_DIR}/models/checkpoints/"
+    fi
+
+    # set a empty file to indicate init complete
+    touch "${APP_INIT_DONE}"
 fi
 
 for d in {embeddings,extensions,models}; do
@@ -108,32 +112,27 @@ for d in {embeddings,extensions,models}; do
 done
 
 load_venv() {
-    if [[ -z "${VIRTUAL_ENV}" ]]; then
-        if [[ -f "${APP_VENV_DIR}/bin/activate" ]]; then
-            source "${APP_VENV_DIR}/bin/activate"
-        else
-            echo "No venv found, creating a new one"
-            "$(conda env list | awk '$1 == "'${APP_NAME}'" { print $NF }')/bin/python" \
-                -m venv "$([[ -L "${APP_VENV_DIR}" ]] && readlink "${APP_VENV_DIR}" || echo "${APP_VENV_DIR}")"
-            source "${APP_VENV_DIR}/bin/activate"
-        fi
+    if [[ -f "${APP_VENV_DIR}/bin/activate" ]]; then
+        source "${APP_VENV_DIR}/bin/activate"
     else
-        printf "python venv already activate or run without venv: ${VIRTUAL_ENV}"
+        echo "No venv found, creating a new one"
+        "$(conda env list | awk '$1 == "'${APP_NAME}'" { print $NF }')/bin/python" \
+            -m venv "$([[ -L "${APP_VENV_DIR}" ]] && readlink "${APP_VENV_DIR}" || echo "${APP_VENV_DIR}")"
+        source "${APP_VENV_DIR}/bin/activate"
     fi
 }
 
 # set http proxy without prompt
-. network-turbo && proxy_set <<< ""
+. network-turbo && proxy_set <<<""
 
 cd "${APP_DIR}" && load_venv &&
     ./webui.sh -f \
         --listen \
         --port "${APP_PORT}" \
-        --data-dir "${APP_DATA_DIR}" \
+        --clip-models-path "${CLIP_CACHE}" \
         --enable-insecure-extension-access \
         --gradio-queue \
         --no-download-sd-model \
         --api \
         --xformers \
-        --clip-models-path "${CLIP_CACHE}" \
         $@

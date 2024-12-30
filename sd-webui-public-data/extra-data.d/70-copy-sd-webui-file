@@ -5,16 +5,17 @@ if [ ${DIB_DEBUG_TRACE:-0} -gt 0 ]; then
 fi
 set -euo pipefail
 
-echo ">> Copy sd_webui source file from HOST"
+echo ">> Copy ${SD_WEBUI_APP_NAME} source file from HOST"
 
 if [ -n "${SD_WEBUI_FILE}" ]; then
     cp "${SD_WEBUI_FILE}" "${TMP_MOUNT_PATH}/tmp/$(basename ${SD_WEBUI_FILE})"
 else
     echo "ERROR: SD_WEBUI_FILE is not set."
+    exit 1
 fi
 
 # if SD_WEBUI_DATA_FILE is not "-", then copy the file to the image
 if [ -n "${SD_WEBUI_DATA_FILE}" ] && [ "${SD_WEBUI_DATA_FILE}" != "-" ]; then
-    echo ">> Copy sd_webui data file from HOST"
+    echo ">> Copy ${SD_WEBUI_APP_NAME} data file from HOST"
     cp "${SD_WEBUI_DATA_FILE}" "${TMP_MOUNT_PATH}/${SD_WEBUI_DATA_TAR}"
 fi
