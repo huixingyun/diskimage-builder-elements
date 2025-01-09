@@ -28,6 +28,17 @@ verify_tensorflow() {
     python3 -c "import tensorflow as tf; print(tf.__version__)"
 }
 
+verify_tensorflow_gpu() {
+    python3 -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
+}
+
+fix_links() {
+    # ref: https://www.tensorflow.org/install/pip#step-by-step_instructions
+    pushd $(dirname $(python3 -c 'print(__import__("tensorflow").__file__)'))
+    ln -svf ../nvidia/*/lib/*.so* .
+    popd
+}
+
 verify_tensorrt() {
     python3 -c "import tensorrt as trt; print(trt.__version__)"
 }
