@@ -1,10 +1,15 @@
 #!/bin/bash
 set -euo pipefail
 
-update-rclone-config $1 $2 $3
-bucket=$4
+update-rclone-config "$1" "$2" "$3"
+bucket="$4"
 
 # root-public.mount will be created
 systemctl daemon-reload
-systemctl disable mount-public@${bucket}.service
-systemctl enable --now mount-public@${bucket}.service
+
+# disable any existing mount-public@*.service names
+for s in $(systemctl list-units --type=service --all 'mount-public@*' --plain --no-legend | cut -f1 -d' '); do
+    systemctl disable --now "${s}"
+done
+
+systemctl enable --now "mount-public@${bucket}.service"
