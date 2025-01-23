@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -e
+
+if [ -z "$2" ]; then
+    echo "Usage: $0 <USER> <PASS>"
+    echo "Example: $0 root admin"
+    exit 1
+fi
+
+
+USER=$1
+PASS=$2
+
+htpasswd -bn $USER $PASS > /root/data/bolt/.htpasswd
+
+if [ ! -L /var/lib/docker ]; then
+    mv /var/lib/docker /var/lib/docker.bak
+    mkdir -p /root/data/docker && ln -s /root/data/docker /var/lib/docker
+fi
+systemctl restart docker
