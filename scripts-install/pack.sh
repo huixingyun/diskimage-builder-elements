@@ -13,6 +13,7 @@ cp -av ../health-check/static/* static/
 cp -av ../health-check/bin/* static/usr/local/bin/
 cp -av ../hcp/bin/* static/usr/local/bin/
 cp -av ../bolt-app/bin/* static/usr/local/bin/
+cp -av ../deepseek-r1-app/bin/* static/usr/local/bin/
 cp -av ../filebrowser/bin/* static/usr/local/bin/
 # cp -av ../systemd-jupyterlab/bin/* static/usr/local/bin/
 # cp -av ../prometheus/bin/* static/usr/local/bin/

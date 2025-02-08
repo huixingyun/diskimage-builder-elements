@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -e
+
+if [ -z "$2" ]; then
+    echo "Usage: $0 <USER> <PASS>"
+    echo "Example: $0 admin@huixingyun.com password"
+    exit 1
+fi
+
+USER=$1
+PASS=$2
+
+if [ "$USER" != "admin@huixingyun.com" ]; then
+    echo "Usage: $0 <USER> <PASS>"
+    echo "Example: $0 admin@huixingyun.com password"
+    exit 1
+fi
+
+PASS_ENC=$(htpasswd -bnBC 10 "" $PASS | awk -F: '{print $2}')
+sqlite3 /root/data/deepseek-r1-app/open_webui/webui.db "UPDATE auth SET password='$PASS_ENC' WHERE email='$USER';"
+
+if [ ! -L /var/lib/docker ]; then
+    mv /var/lib/docker /var/lib/docker.bak
+    mkdir -p /root/data/docker && ln -s /root/data/docker /var/lib/docker
+    systemctl restart docker
+fi
+
+. network-turbo && proxy_set <<<""
+. docker-network-turbo && container_proxy_set
+docker restart open-webui
