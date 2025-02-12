@@ -45,3 +45,5 @@ WEB_PATH=$INSTALL_PATH/open-webui/build
 rm -rf $WEB_PATH && mkdir -p $WEB_PATH && tar zxvf $PKG_PATH/openwebui-build.tgz -C $(dirname $WEB_PATH)
 
 cd $INSTALL_PATH && docker compose up -d --force-recreate
+# preload deepseek-r1:70b
+docker exec -d ollama ollama run deepseek-r1:70b
