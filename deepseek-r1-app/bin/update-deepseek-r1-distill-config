@@ -10,7 +10,7 @@ fi
 
 USER=$1
 PASS=$2
-INSTALL_PATH=/root/data/deepseek-r1
+INSTALL_PATH=/root/data/deepseek-r1-distill
 PKG_PATH=/root/public/apps/deepseek
 
 
@@ -40,7 +40,7 @@ fi
 
 # 4. untar app script and docker compose up
 
-tar zxvf $PKG_PATH/deepseek-r1.tgz -C /root/data
+tar zxvf $PKG_PATH/deepseek-r1-distill.tgz -C /root/data
 WEB_PATH=$INSTALL_PATH/open-webui/build
 rm -rf $WEB_PATH && mkdir -p $WEB_PATH && tar zxvf $PKG_PATH/openwebui-build.tgz -C $(dirname $WEB_PATH)
 
