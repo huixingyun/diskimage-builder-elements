@@ -25,20 +25,35 @@ fi
 PASS_ENC=$(htpasswd -bnBC 10 "" $PASS | awk -F: '{print $2}')
 sqlite3 $INSTALL_PATH/open-webui/data/webui.db "UPDATE auth SET password='$PASS_ENC' WHERE email='$USER';"
 
-# 2. relink docker data path
+# 2. fix docker daemon nvidia bug
 
+cat << EOF > /etc/docker/daemon.json
+{
+    "mtu": 1450,
+    "runtimes": {
+        "nvidia": {
+            "args": [],
+            "path": "nvidia-container-runtime"
+        }
+    },
+    "exec-opts": ["native.cgroupdriver=cgroupfs"]
+}
+EOF
+systemctl restart docker
+
+# 3. relink docker data path
 if [ ! -L /var/lib/docker ]; then
     mv /var/lib/docker /var/lib/docker.bak
     mkdir -p /root/data/docker && ln -s /root/data/docker /var/lib/docker
     systemctl restart docker
 fi
 
-# 3. enable docker proxy to download openwebui related models
+# 4. enable docker proxy to download openwebui related models
 
 . network-turbo && proxy_set <<<""
 . docker-network-turbo && container_proxy_set
 
-# 4. untar app script and docker compose up
+# 5. untar app script and docker compose up
 
 tar zxf $PKG_PATH/deepseek-r1-distill.tgz -C /root/data
 WEB_PATH=$INSTALL_PATH/open-webui/build
