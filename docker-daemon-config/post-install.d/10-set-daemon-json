@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+
+import json
+import os
+import sys
+
+DEFAULT_CONFIG_PATH = "/etc/docker/daemon.json"
+
+
+def load_config(config_path=DEFAULT_CONFIG_PATH):
+    try:
+        with open(config_path, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print(f"Config file does not exist, creating new config: {config_path}")
+        os.makedirs(os.path.dirname(config_path), exist_ok=True)
+        return {}
+    except json.JSONDecodeError:
+        print(f"Invalid config file format: {config_path}")
+        sys.exit(1)
+
+
+def save_config(config, config_path=DEFAULT_CONFIG_PATH):
+    try:
+        with open(config_path, "w") as f:
+            json.dump(config, f, indent=2)
+        print(f"Config saved to: {config_path}")
+    except IOError as e:
+        print(f"Error saving config file: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    try:
+        config = load_config()
+
+        config["mtu"] = 1450
+        config["data-root"] = "/root/data/docker"
+
+        save_config(config)
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        sys.exit(1)
