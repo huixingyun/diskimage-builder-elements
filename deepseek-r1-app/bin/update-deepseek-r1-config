@@ -25,7 +25,23 @@ fi
 PASS_ENC=$(htpasswd -bnBC 10 "" $PASS | awk -F: '{print $2}')
 sqlite3 $INSTALL_PATH/open-webui/data/webui.db "UPDATE auth SET password='$PASS_ENC' WHERE email='$USER';"
 
-# 2. relink docker data path
+# 2. fix docker daemon nvidia bug
+
+cat << EOF > /etc/docker/daemon.json
+{
+    "mtu": 1450,
+    "runtimes": {
+        "nvidia": {
+            "args": [],
+            "path": "nvidia-container-runtime"
+        }
+    },
+    "exec-opts": ["native.cgroupdriver=cgroupfs"]
+}
+EOF
+systemctl restart docker
+
+# 3. relink docker data path
 
 if [ ! -L /var/lib/docker ]; then
     mv /var/lib/docker /var/lib/docker.bak
@@ -33,15 +49,15 @@ if [ ! -L /var/lib/docker ]; then
     systemctl restart docker
 fi
 
-# 3. enable docker proxy to download openwebui related models
+# 4. enable docker proxy to download openwebui related models
 
 . network-turbo && proxy_set <<<""
 . docker-network-turbo && container_proxy_set
 
-# 4. untar app script and docker compose up
+# 5. untar app script and docker compose up
 
-tar zxvf $PKG_PATH/deepseek-r1.tgz -C /root/data
+tar zxf $PKG_PATH/deepseek-r1.tgz -C /root/data
 WEB_PATH=$INSTALL_PATH/open-webui/build
-rm -rf $WEB_PATH && mkdir -p $WEB_PATH && tar zxvf $PKG_PATH/openwebui-build.tgz -C $(dirname $WEB_PATH)
+rm -rf $WEB_PATH && mkdir -p $WEB_PATH && tar zxf $PKG_PATH/openwebui-build.tgz -C $(dirname $WEB_PATH)
 
 cd $INSTALL_PATH && docker compose up -d --force-recreate
