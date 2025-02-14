@@ -13,20 +13,3 @@ VERSION_STRING="${DIB_NVIDIA_CTK_VERSION}-1"
 sudo apt-get install -y nvidia-container-toolkit=$VERSION_STRING
 
 nvidia-ctk runtime configure --runtime=docker
-
-# https://stackoverflow.com/questions/72932940/failed-to-initialize-nvml-unknown-error-in-docker-after-few-hours
-python3 << 'EOF'
-import json
-import os
-
-config_path = "/etc/docker/daemon.json"
-try:
-    config = json.load(open(config_path).read())
-except FileNotFoundError:
-    config = {}
-    os.makedirs(os.path.dirname(config_path), exist_ok=True)
-
-config["exec-opts"] = ["native.cgroupdriver=cgroupfs"]
-with open(config_path, "w") as f:
-    json.dump(config, f, indent=2)
-EOF
