@@ -14,16 +14,11 @@ INSTALL_PATH=/root/data/deepseek-r1-distill
 PKG_PATH=/root/public/apps/deepseek
 
 
-if [ "$USER" != "admin@huixingyun.com" ]; then
-    echo "Usage: $0 <USER> <PASS>"
-    echo "Example: $0 admin@huixingyun.com password"
-    exit 1
-fi
-
 # 1. update openwebui admin password
 
 PASS_ENC=$(htpasswd -bnBC 10 "" $PASS | awk -F: '{print $2}')
-sqlite3 $INSTALL_PATH/open-webui/data/webui.db "UPDATE auth SET password='$PASS_ENC' WHERE email='$USER';"
+sqlite3 $INSTALL_PATH/open-webui/data/webui.db "UPDATE user SET email='$USER' WHERE email='admin@huixingyun.com';"
+sqlite3 $INSTALL_PATH/open-webui/data/webui.db "UPDATE auth SET email='$USER', password='$PASS_ENC' WHERE email='admin@huixingyun.com';"
 
 # 2. fix docker daemon nvidia bug
 
