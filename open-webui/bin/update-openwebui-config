@@ -10,7 +10,7 @@ import time
 # ref: https://docs.openwebui.com/getting-started/troubleshooting#reset-admin-password
 
 cfg_path = "/root/data/open_webui/data/webui.db"
-default_endpoint = "http://localhost:10000"
+default_endpoint = "http://127.0.0.1:10000"
 
 service_list = [
     # "ollama.service",
@@ -57,14 +57,29 @@ def update_auth(username, password):
     )
     password = p.stdout.decode("utf-8").strip().split(":")[1]
 
+    # Update both auth and user tables using JOIN
     p = subprocess.run(
         [
             "sqlite3",
             cfg_path,
-            f"UPDATE auth SET password='{password}' WHERE email='{username}';",
+            f"""
+            UPDATE auth 
+            SET password = '{password}', 
+                email = '{username}'
+            WHERE id IN (
+                SELECT auth.id 
+                FROM auth 
+                JOIN user ON user.id = auth.id 
+                WHERE user.name = 'admin'
+            );
+            
+            UPDATE user 
+            SET email = '{username}'
+            WHERE name = 'admin';
+            """,
         ]
     )
-    print(f"Updated password for {username}")
+    print(f"Updated email and password for admin user")
 
 
 if __name__ == "__main__":
@@ -79,8 +94,6 @@ if __name__ == "__main__":
     for service_name in service_list:
         if os.system(f"systemctl is-active --quiet {service_name}") != 0:
             os.system(f"systemctl enable --now {service_name}")
-        else:
-            os.system(f"systemctl restart {service_name}")
 
     # waiting for endpoint to be ready
     while True:
