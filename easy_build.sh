@@ -7,7 +7,7 @@ git pull
 popd
 
 TM=$(date +%Y%m%d)
-OUTPUT_DIR="$OUTPUT_DIR:-$HOME/data"
+OUTPUT_DIR="${OUTPUT_DIR:-$HOME/data}"
 
 pushd $OUTPUT_DIR
 for i in $@; do
