@@ -1,0 +1,9 @@
+[Unit]
+Description=Try to install volcengine assist client
+
+[Service]
+Type=oneshot
+ExecStart=/opt/assist-client/check-install.sh
+
+[Install]
+WantedBy=multi-user.target
