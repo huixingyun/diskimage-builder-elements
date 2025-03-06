@@ -27,3 +27,9 @@ elif [ -d "${cache_dir}" ]; then
         mv "${cache_dir}" "${cache_dir}.bak" &&
         ln -s "${linked_cache_dir}" "${cache_dir}"
 fi
+
+# restart any mount-public@*.service names
+systemctl daemon-reload
+for s in $(systemctl list-units --type=service --all 'mount-public@*' --plain --no-legend | cut -f1 -d' '); do
+    systemctl restart "${s}"
+done

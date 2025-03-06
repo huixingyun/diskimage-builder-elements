@@ -131,6 +131,10 @@ class RcloneS3:
             --allow-other \
             --s3-directory-markers \
             --devname="private" {options}\
+            --cache-dir=/root/.cache/rclone \
+            --vfs-cache-mode=full \
+            --vfs-cache-max-size=1G \
+            --vfs-cache-max-age=24h \
             {self.alias_name}: "{self.mount_path}"
         ExecStop=/bin/fusermount -u "{self.mount_path}"
 

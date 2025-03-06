@@ -8,13 +8,19 @@ Wants=network-online.target
 Type=notify
 User=root
 Group=root
-ExecStartPre=-/bin/mkdir -p /root/public
+ExecStartPre=-/bin/bash -c '/bin/mkdir -p "/root/public" && \
+  ! /bin/mountpoint -q "/root/public" || \
+  /bin/umount --force "/root/public"'
 ExecStart= \
   /usr/bin/rclone mount \
     --config=/root/.config/rclone/rclone.conf \
     --read-only \
     --allow-other \
     --devname="public" \
+    --cache-dir=/root/.cache/rclone \
+    --vfs-cache-mode=full \
+    --vfs-cache-max-size=1G \
+    --vfs-cache-max-age=24h \
     public-data:%i /root/public
 ExecStop=/bin/fusermount -u /root/public
 
