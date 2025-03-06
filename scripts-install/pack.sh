@@ -24,6 +24,6 @@ cp -av ../open-webui/bin/* static/usr/local/bin/
 # cp -av ../sd-webui-common/bin/* static/usr/local/bin/
 # cp -av ../fooocus/bin/* static/usr/local/bin/
 
-cp -av ../rclone/static/* static/
+cp -av ../rclone/static/etc/* static/etc/
 
 tar -czvf scripts.tgz -C static/ .
