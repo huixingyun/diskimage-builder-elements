@@ -1,0 +1,6 @@
+#!/bin/bash
+set -xe
+
+INSTALL_PATH=/root/data/deepseek-r1-distill
+mkdir -p $INSTALL_PATH && tar zxvf /root/public/apps/deepseek/deepseek-r1-install.tgz -C $INSTALL_PATH
+cd $INSTALL_PATH && pip install -r requirements.txt && python run.py
