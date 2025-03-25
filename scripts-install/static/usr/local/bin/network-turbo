@@ -14,7 +14,7 @@ proxy_set() {
 
     export http_proxy="$http_proxy"
     export https_proxy="$http_proxy"
-    export no_proxy="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.1,::1,localhost"
+    export no_proxy="10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,127.0.0.1,::1,localhost"
     export HTTP_PROXY=$http_proxy
     export HTTPS_PROXY=$https_proxy
     export NO_PROXY=$no_proxy
