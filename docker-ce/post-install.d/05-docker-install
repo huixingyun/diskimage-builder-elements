@@ -15,3 +15,6 @@ sudo apt-get install -y docker-ce=$VERSION_STRING \
     containerd.io \
     docker-buildx-plugin \
     docker-compose-plugin
+
+# docker 启动必须保证 root-data.service 启动成功
+sudo sed -i 's/After=\(.*\)/After=\1 root-data.service/' /lib/systemd/system/docker.service
