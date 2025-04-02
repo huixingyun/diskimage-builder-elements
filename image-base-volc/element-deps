@@ -2,5 +2,3 @@ image-base-hc
 cloud-init-datasource-volcengine
 volcengine-reset-authentication
 volcengine-assist-client
-block-device-efi
-grub2
