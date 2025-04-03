@@ -120,8 +120,22 @@ grow_partition() {
     fi
 
     umount "${partition}" &>/dev/null
-    growpart "${device}" 1
-    e2fsck -p -f "${partition}"
-    resize2fs "${partition}"
+
+    if ! growpart "${device}" 1; then
+        echo "Failed to grow partition ${partition}, checking available space..."
+        df -h
+        return 1
+    fi
+
+    if ! e2fsck -p -f "${partition}"; then
+        echo "Failed to check filesystem on ${partition}"
+        return 1
+    fi
+
+    if ! resize2fs "${partition}"; then
+        echo "Failed to resize filesystem on ${partition}"
+        return 1
+    fi
+
     echo "grow partition ${partition} success"
 }

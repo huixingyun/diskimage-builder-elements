@@ -3,6 +3,8 @@
     # base
     - vm
     - ubuntu
+    - block-device-efi
+    - grub2
     - image-base-volc
     # webapp
     - jupyterlab
