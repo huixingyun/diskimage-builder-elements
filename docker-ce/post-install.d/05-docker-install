@@ -16,6 +16,5 @@ sudo apt-get install -y docker-ce=$VERSION_STRING \
     docker-buildx-plugin \
     docker-compose-plugin
 
-# Add Requisite dependency for root-data.mount
-sudo sed -i '/\[Unit\]/a Requisite=root-data.mount' /lib/systemd/system/docker.service
-
+# Add ExecStartPre to wait for mount point
+sudo sed -i '/\[Service\]/a ExecStartPre=/bin/bash -c '"'"'until mountpoint -q /root/data || [ $? -eq 0 ]; do sleep 1; done'"'" /lib/systemd/system/docker.service
