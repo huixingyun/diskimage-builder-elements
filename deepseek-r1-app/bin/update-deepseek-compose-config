@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -e
+
+WORKDIR=/root/data/deepseek
+mkdir -p $WORKDIR
+echo "services:
+  llmhub:
+    restart: always
+    image: hub.upyun.com/huixingyun/llmhub:v1.0.5
+    environment:
+      OPENAI_SERVER: http://host.docker.internal:30000
+      MODEL_SERVER: http://model_core:28080
+    volumes:
+      - llmhub:/src/data
+    extra_hosts:
+      - host.docker.internal:host-gateway
+  openwebui:
+    restart: always
+    image: hub.upyun.com/huixingyun/the-open-deepseek:9155c4c
+    volumes:
+      - webui:/app/backend/data
+      - webui-static:/app/backend/open_webui/static
+    environment:
+      LLMHUB_BASE_URL: http://llmhub:3000
+      OPENAI_API_BASE_URLS: http://llmhub:3000/llm/v1
+    ports:
+    - 10000:8080
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  model_core:
+    restart: always
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    build: .
+    ipc: host
+    cap_add:
+      - SYS_ADMIN
+    image: hub.upyun.com/huixingyun/model-core:v0.0.1-rc1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /root/public/models/DeepSeek:/root/public/models/DeepSeek
+volumes:
+  webui-static:
+  llmhub:
+  webui:
+" >"$WORKDIR/docker-compose.yaml"
+
+cd $WORKDIR && docker compose up
