@@ -16,5 +16,5 @@ sudo apt-get install -y docker-ce=$VERSION_STRING \
     docker-buildx-plugin \
     docker-compose-plugin
 
-# docker 启动必须保证 root-data.service 启动成功
-sudo sed -i 's/After=\(.*\)/After=\1 root-data.service/' /lib/systemd/system/docker.service
+# docker 启动必须保证 root-data.mount 完成
+sudo sed -i 's/Requires=\(.*\)/Requires=\1 root-data.mount/' /lib/systemd/system/docker.service
