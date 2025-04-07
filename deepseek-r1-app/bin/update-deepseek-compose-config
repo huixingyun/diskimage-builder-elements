@@ -50,4 +50,4 @@ volumes:
   webui:
 " >"$WORKDIR/docker-compose.yaml"
 
-cd $WORKDIR && docker compose up
+cd $WORKDIR && docker compose up -d
