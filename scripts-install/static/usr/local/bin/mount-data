@@ -28,6 +28,11 @@ elif [ -d "${cache_dir}" ]; then
         ln -s "${linked_cache_dir}" "${cache_dir}"
 fi
 
+# if docker.service exists, enable it
+if ! systemctl is-active --quiet docker.service; then
+    systemctl enable --now docker.service
+fi
+
 # restart any mount-public@*.service names
 systemctl daemon-reload
 for s in $(systemctl list-units --type=service --all 'mount-public@*' --plain --no-legend | cut -f1 -d' '); do
