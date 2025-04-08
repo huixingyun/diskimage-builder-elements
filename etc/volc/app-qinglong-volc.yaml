@@ -5,7 +5,7 @@
     - ubuntu
     - block-device-efi
     - grub2
-    - image-base-hc
+    - image-base-volc
     # webapp
     - jupyterlab
     # mount
