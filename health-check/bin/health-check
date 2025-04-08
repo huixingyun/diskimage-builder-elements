@@ -3,33 +3,36 @@
 check_cloud_init_datasource() {
     # check if datasource is openstack
     if cloud-id | grep -q openstack; then
-        echo "cloud-init datasource is openstack"
+        echo "health-check: cloud-init datasource is openstack"
         return 0
     else
+        echo "health-check: cloud-init datasource is $(cloud-id)"
         return 1
     fi
 }
 
-check_app_running_on_port() {
-    # check port is open
-    local port=$1
-    if ss -anp | grep -q :$port; then
-        echo "app is running on port $port"
+check_cloud_init_status() {
+    # check cloud-init status
+    cloud_init_status=$(cloud-init status)
+    if echo "$cloud_init_status" | grep -q "done"; then
+        echo "health-check: cloud-init status is done"
         return 0
     else
+        echo "health-check: cloud-init status is ${cloud_init_status}"
         return 1
     fi
 }
 
-if ! check_cloud_init_datasource; then
-    echo "health-check: Failed to check cloud-init datasource"
-    exit 1
-fi
+check_list=(
+    check_cloud_init_datasource
+    check_cloud_init_status
+)
 
-# jupyter lab port check
-# if ! check_app_running_on_port 8888; then
-#     echo "health-check: Failed to check app running on port 8888"
-#     exit 1
-# fi
+for check in "${check_list[@]}"; do
+    if ! $check; then
+        echo "health-check: Failed on $check"
+        exit 1
+    fi
+done
 
 echo "health-check: OK"
