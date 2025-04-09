@@ -26,12 +26,14 @@ echo "services:
     cap_add:
       - SYS_ADMIN
     image: hub.upyun.com/huixingyun/model-core:v0.0.3
+    pull_policy: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /root/public/models/DeepSeek:/root/public/models/DeepSeek
 
   llmhub:
     image: hub.upyun.com/huixingyun/llmhub:v1.0.5
+    pull_policy: always
     environment:
       OPENAI_SERVER: http://host.docker.internal:30000
       MODEL_SERVER: http://model_core:28080
@@ -40,7 +42,8 @@ echo "services:
     extra_hosts:
       - host.docker.internal:host-gateway
   openwebui:
-    image: hub.upyun.com/huixingyun/the-open-deepseek:v0.0.2-wait
+    image: hub.upyun.com/huixingyun/the-open-deepseek:v0.0.3-wait
+    pull_policy: always
     build: webui
     depends_on:
     - llmhub
