@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+set -e
+
+if [ -z "$2" ]; then
+  echo "Usage: $0 <USER> <PASS>"
+  echo "Example: $0 admin@huixingyun.com password"
+  exit 1
+fi
+
+WORKDIR=/root/data/webui
+
+mkdir -p $WORKDIR
+echo "services:
+  model_core:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    build: .
+    ipc: host
+    environment:
+      DEEPSEEK_HOST: host.docker.internal
+    cap_add:
+      - SYS_ADMIN
+    image: hub.upyun.com/huixingyun/model-core:v0.0.2
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /root/public/models/DeepSeek:/root/public/models/DeepSeek
+
+  llmhub:
+    image: hub.upyun.com/huixingyun/llmhub:v1.0.5
+    environment:
+      OPENAI_SERVER: http://host.docker.internal:30000
+      MODEL_SERVER: http://model_core:28080
+    volumes:
+      - llmhub:/src/data
+    extra_hosts:
+      - host.docker.internal:host-gateway
+  openwebui:
+    image: hub.upyun.com/huixingyun/the-open-deepseek:v0.0.2-wait
+    build: webui
+    depends_on:
+    - llmhub
+    - model_core
+    volumes:
+      - webui:/app/backend/data
+      - webui-static:/app/backend/open_webui/static
+    environment:
+      OFFLINE_MODE: true
+      LLMHUB_BASE_URL: http://llmhub:3000
+      OPENAI_API_BASE_URLS: http://llmhub:3000/llm/v1
+    ports:
+    - 10000:8080
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+volumes:
+  webui-static:
+  llmhub:
+  webui:
+" >"$WORKDIR/docker-compose.yaml"
+
+cd $WORKDIR && docker compose up -d
+
+USER=$1
+PASS=$2
+update-openwebui-config "$USER" "$PASS"
