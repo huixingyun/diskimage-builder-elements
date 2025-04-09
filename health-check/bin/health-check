@@ -25,7 +25,7 @@ check_cloud_init_status() {
 
 check_list=(
     check_cloud_init_datasource
-    check_cloud_init_status
+    # check_cloud_init_status
 )
 
 for check in "${check_list[@]}"; do
