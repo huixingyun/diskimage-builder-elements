@@ -25,7 +25,7 @@ echo "services:
       DEEPSEEK_HOST: host.docker.internal
     cap_add:
       - SYS_ADMIN
-    image: hub.upyun.com/huixingyun/model-core:v0.0.2
+    image: hub.upyun.com/huixingyun/model-core:v0.0.3
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /root/public/models/DeepSeek:/root/public/models/DeepSeek
