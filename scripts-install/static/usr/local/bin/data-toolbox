@@ -113,7 +113,7 @@ class Toolbox:
             print(self.prompts['terminated'])
             exit(0)
 
-        os.system(f'rclone sync --inplace --transfers=32 --checkers=32 -L -P -M "{self.backup_source}/" "{backup_dir}/"')
+        os.system(f'rclone sync --links --inplace --transfers=32 --checkers=32 -L -P -M "{self.backup_source}/" "{backup_dir}/"')
         print(self.prompts['backup_completed'])
 
     def perform_restore(self):
@@ -138,7 +138,7 @@ class Toolbox:
             print(self.prompts['terminated'])
             exit(0)
 
-        os.system(f'rclone sync --inplace --transfers=32 --checkers=32 -L -P -M "{backup_dir}/" "{self.backup_source}/"')
+        os.system(f'rclone sync --links --inplace --transfers=32 --checkers=32 -L -P -M "{backup_dir}/" "{self.backup_source}/"')
         print(self.prompts['restore_completed'])
 
     def manage_backup(self):
