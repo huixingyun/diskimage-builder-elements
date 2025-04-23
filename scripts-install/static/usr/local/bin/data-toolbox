@@ -8,54 +8,54 @@ backup_destination = "root-private:/backup"
 
 # Define prompts in both languages
 prompts = {
-    'en': {
-        'type_new_name': "Type a new name",
-        'select_backup': "Select a backup:",
-        'enter_backup_name': "Enter backup name: ",
-        'confirm_overwrite': "Are you sure you want to overwrite {name}? This operation cannot be undone. (y/n): ",
-        'terminated': "Terminated",
-        'backup_completed': "Backup completed",
-        'select_restore': "Select a backup to restore from:",
-        'confirm_restore': "Are you sure you want to restore from {name}? (y/n): ",
-        'restore_completed': "Restore completed",
-        'select_manage': "Select a backup to manage:",
-        'select_operation': "Select an operation:",
-        'backup': "Backup",
-        'restore': "Restore",
-        'no_backups': "No backups available",
-        'manage_backup': "Manage Backup",
-        'rename': "Rename",
-        'delete': "Delete",
-        'enter_new_name': "Enter new name: ",
-        'backup_renamed': "Backup renamed successfully",
-        'confirm_delete': "Are you sure you want to delete {name}? This operation cannot be undone. (y/n): ",
-        'backup_deleted': "Backup deleted successfully",
-        'invalid_operation': "Invalid operation",
+    "en": {
+        "type_new_name": "Type a new name",
+        "select_backup": "Select a backup:",
+        "enter_backup_name": "Enter backup name: ",
+        "confirm_overwrite": "Are you sure you want to overwrite {name}? This operation cannot be undone. (y/n): ",
+        "terminated": "Terminated",
+        "backup_completed": "Backup completed",
+        "select_restore": "Select a backup to restore from:",
+        "confirm_restore": "Are you sure you want to restore from {name}? (y/n): ",
+        "restore_completed": "Restore completed",
+        "select_manage": "Select a backup to manage:",
+        "select_operation": "Select an operation:",
+        "backup": "Backup",
+        "restore": "Restore",
+        "no_backups": "No backups available",
+        "manage_backup": "Manage Backup",
+        "rename": "Rename",
+        "delete": "Delete",
+        "enter_new_name": "Enter new name: ",
+        "backup_renamed": "Backup renamed successfully",
+        "confirm_delete": "Are you sure you want to delete {name}? This operation cannot be undone. (y/n): ",
+        "backup_deleted": "Backup deleted successfully",
+        "invalid_operation": "Invalid operation",
     },
-    'zh': {
-        'type_new_name': '输入一个新名称',
-        'select_backup': "选择一个备份:",
-        'enter_backup_name': "输入备份名称: ",
-        'confirm_overwrite': "你确定要覆盖 {name} 吗？这个操作不能撤销。 (y/n): ",
-        'terminated': "已终止",
-        'backup_completed': "备份完成",
-        'select_restore': "选择一个备份来恢复:",
-        'confirm_restore': "你确定要从 {name} 恢复吗？ (y/n): ",
-        'restore_completed': "恢复完成",
-        'select_manage': "选择一个备份来管理:",
-        'select_operation': "选择一个操作:",
-        'backup': "备份",
-        'restore': "恢复",
-        'no_backups': "无备份可用",
-        'manage_backup': "管理备份",
-        'rename': "重命名",
-        'delete': "删除",
-        'enter_new_name': "输入新名称: ",
-        'backup_renamed': "备份成功重命名",
-        'confirm_delete': "你确定要删除 {name} 吗？这个操作不能撤销。 (y/n): ",
-        'backup_deleted': "备份成功删除",
-        'invalid_operation': "无效的操作",
-    }
+    "zh": {
+        "type_new_name": "输入一个新名称",
+        "select_backup": "选择一个备份:",
+        "enter_backup_name": "输入备份名称: ",
+        "confirm_overwrite": "你确定要覆盖 {name} 吗？这个操作不能撤销。 (y/n): ",
+        "terminated": "已终止",
+        "backup_completed": "备份完成",
+        "select_restore": "选择一个备份来恢复:",
+        "confirm_restore": "你确定要从 {name} 恢复吗？ (y/n): ",
+        "restore_completed": "恢复完成",
+        "select_manage": "选择一个备份来管理:",
+        "select_operation": "选择一个操作:",
+        "backup": "备份",
+        "restore": "恢复",
+        "no_backups": "无备份可用",
+        "manage_backup": "管理备份",
+        "rename": "重命名",
+        "delete": "删除",
+        "enter_new_name": "输入新名称: ",
+        "backup_renamed": "备份成功重命名",
+        "confirm_delete": "你确定要删除 {name} 吗？这个操作不能撤销。 (y/n): ",
+        "backup_deleted": "备份成功删除",
+        "invalid_operation": "无效的操作",
+    },
 }
 
 
@@ -64,12 +64,20 @@ class Toolbox:
         self.prompts = prompts[language]
         self.backup_source = src
         self.backup_destination = dst
-    
+
+    def _rclone_sync(self, source, destination):
+        """Executes the rclone sync command with common options."""
+        command = (
+            f"rclone sync --links --inplace --transfers=32 --checkers=32 "
+            f'--progress --metadata "{source}" "{destination}"'
+        )
+        os.system(command)
+
     def run(self):
-        print(self.prompts['select_operation'])
-        print("1. " + self.prompts['backup'])
-        print("2. " + self.prompts['restore'])
-        print("3. " + self.prompts['manage_backup'])
+        print(self.prompts["select_operation"])
+        print("1. " + self.prompts["backup"])
+        print("2. " + self.prompts["restore"])
+        print("3. " + self.prompts["manage_backup"])
         option = input()
 
         if option == "1":
@@ -79,7 +87,7 @@ class Toolbox:
         elif option == "3":
             self.manage_backup()
         else:
-            print(self.prompts['invalid_operation'])
+            print(self.prompts["invalid_operation"])
             exit(1)
 
     def get_backup_names(self):
@@ -92,9 +100,9 @@ class Toolbox:
 
     def perform_backup(self):
         backup_names = self.get_backup_names()
-        backup_names.insert(0, self.prompts['type_new_name'])
+        backup_names.insert(0, self.prompts["type_new_name"])
 
-        print(self.prompts['select_backup'])
+        print(self.prompts["select_backup"])
         for i, name in enumerate(backup_names):
             print(f"{i}. {name}")
 
@@ -104,81 +112,82 @@ class Toolbox:
             exit(1)
 
         if backup_choice == 0:
-            backup_root_dir = input(self.prompts['enter_backup_name'])
+            backup_root_dir = input(self.prompts["enter_backup_name"])
         else:
             backup_root_dir = backup_names[backup_choice]
         backup_dir = f"{self.backup_destination}/{backup_root_dir}"
-        choice = input(self.prompts['confirm_overwrite'].format(name=backup_root_dir))
+        choice = input(self.prompts["confirm_overwrite"].format(name=backup_root_dir))
         if choice.lower() != "y":
-            print(self.prompts['terminated'])
+            print(self.prompts["terminated"])
             exit(0)
 
-        os.system(f'rclone sync --links --inplace --transfers=32 --checkers=32 -L -P -M "{self.backup_source}/" "{backup_dir}/"')
-        print(self.prompts['backup_completed'])
+        self._rclone_sync(f"{self.backup_source}/", f"{backup_dir}/")
+        print(self.prompts["backup_completed"])
 
     def perform_restore(self):
         backup_names = self.get_backup_names()
         if len(backup_names) == 0:
-            print(self.prompts['no_backups'])
+            print(self.prompts["no_backups"])
             exit(1)
 
-        print(self.prompts['select_restore'])
+        print(self.prompts["select_restore"])
         for i, name in enumerate(backup_names):
             print(f"{i}. {name}")
 
         backup_choice = int(input())
         if backup_choice >= len(backup_names):
-            print(self.prompts['invalid_operation'])
+            print(self.prompts["invalid_operation"])
             exit(1)
 
         backup_root_dir = backup_names[backup_choice]
         backup_dir = f"{self.backup_destination}/{backup_root_dir}"
-        choice = input(self.prompts['confirm_restore'].format(name=backup_root_dir))
+        choice = input(self.prompts["confirm_restore"].format(name=backup_root_dir))
         if choice.lower() != "y":
-            print(self.prompts['terminated'])
+            print(self.prompts["terminated"])
             exit(0)
 
-        os.system(f'rclone sync --links --inplace --transfers=32 --checkers=32 -L -P -M "{backup_dir}/" "{self.backup_source}/"')
-        print(self.prompts['restore_completed'])
+        self._rclone_sync(f"{backup_dir}/", f"{self.backup_source}/")
+        print(self.prompts["restore_completed"])
 
     def manage_backup(self):
         backup_names = self.get_backup_names()
         if len(backup_names) == 0:
-            print(self.prompts['no_backups'])
+            print(self.prompts["no_backups"])
             exit(1)
 
-        print(self.prompts['select_manage'])
+        print(self.prompts["select_manage"])
         for i, name in enumerate(backup_names):
             print(f"{i}. {name}")
 
         backup_choice = int(input())
         if backup_choice >= len(backup_names):
-            print(self.prompts['invalid_operation'])
+            print(self.prompts["invalid_operation"])
             exit(1)
 
         backup_root_dir = backup_names[backup_choice]
         backup_dir = f"{self.backup_destination}/{backup_root_dir}"
 
-        print(self.prompts['select_operation'])
-        print("1. " + self.prompts['rename'])
-        print("2. " + self.prompts['delete'])
+        print(self.prompts["select_operation"])
+        print("1. " + self.prompts["rename"])
+        print("2. " + self.prompts["delete"])
         operation = input()
 
         if operation == "1":
-            new_name = input(self.prompts['enter_new_name'])
+            new_name = input(self.prompts["enter_new_name"])
             new_dir = f"{self.backup_destination}/{new_name}"
             os.system(f'rclone moveto "{backup_dir}" "{new_dir}"')
-            print(self.prompts['backup_renamed'])
+            print(self.prompts["backup_renamed"])
         elif operation == "2":
-            choice = input(self.prompts['confirm_delete'].format(name=backup_root_dir))
+            choice = input(self.prompts["confirm_delete"].format(name=backup_root_dir))
             if choice.lower() != "y":
-                print(self.prompts['terminated'])
+                print(self.prompts["terminated"])
                 exit(0)
             os.system(f'rclone purge "{backup_dir}"')
-            print(self.prompts['backup_deleted'])
+            print(self.prompts["backup_deleted"])
         else:
-            print(self.prompts['invalid_operation'])
+            print(self.prompts["invalid_operation"])
             exit(1)
+
 
 def main():
     # Ask the user to select a language
@@ -186,9 +195,10 @@ def main():
     print("1. 中文")
     print("2. English")
     language_choice = int(input())
-    language = 'zh' if language_choice == 1 else 'en'
+    language = "zh" if language_choice == 1 else "en"
     toolbox = Toolbox(language, backup_source, backup_destination)
     toolbox.run()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
