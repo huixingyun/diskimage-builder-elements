@@ -121,11 +121,7 @@ grow_partition() {
 
     umount "${partition}" &>/dev/null
 
-    if ! growpart "${device}" 1; then
-        echo "Failed to grow partition ${partition}, checking available space..."
-        df -h
-        return 1
-    fi
+    growpart "${device}" 1 || true
 
     if ! e2fsck -p -f "${partition}"; then
         echo "Failed to check filesystem on ${partition}"
