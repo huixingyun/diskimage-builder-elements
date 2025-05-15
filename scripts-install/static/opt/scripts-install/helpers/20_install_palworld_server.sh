@@ -58,7 +58,6 @@ EOF
 }
 
 start_palworld_server() {
-    setup_docker_mirror
     install_docker
     setup_palworld_docker_compose
     docker compose -f ${PALWORLD_DATA_DIR}/docker-compose.yml up -d
