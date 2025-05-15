@@ -5,7 +5,7 @@ setup_pip_mirror() {
   cat >${HOME}/.pip/pip.conf <<EOF
 [global]
 index-url = https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/
-extra-index-url = https://mirrors.bfsu.edu.cn/pypi/web/simple
+#extra-index-url = https://mirrors.bfsu.edu.cn/pypi/web/simple
 EOF
   echo "pip mirror already set"
 }
