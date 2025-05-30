@@ -1,0 +1,37 @@
+- imagename: image-gpu-docker-ali
+  elements:
+    # base
+    - vm
+    - ubuntu
+    - block-device-efi
+    - grub2
+    - image-base-aliyun
+    # webapp
+    - jupyterlab
+    # mount
+    - rclone
+    # monitor
+    - node-exporter
+    - prometheus
+    # gpu
+    - dcgm-exporter
+    - nvidia-driver
+    # docker
+    - docker-ce
+    - nvidia-ctk
+  debug-trace: 0
+  no-tmpfs: true
+  environment:
+    DIB_RELEASE: jammy # Ubuntu Server 22.04 LTS
+    DIB_CLOUD_INIT_DATASOURCES: "AliYun,ConfigDrive,OpenStack"
+    DIB_OFFLINE: "true"
+    DIB_MINICONDA_RELEASE: py310_23.11.0-2
+    DIB_TIMEZONE: Asia/Shanghai
+    DIB_DCGM_VERSION: "3.3.0"
+    DIB_DCGM_EXPORTER_VERSION: "3.3.0-3.2.0"
+    DIB_PROMETHEUS_VERSION: "2.49.1"
+    DIB_NODE_EXPORTER_VER: "1.7.0"
+    DIB_JUPYTERLAB_VER: "4.4.3"
+    DIB_NVIDIA_DRIVER_VERSION: "560.35.05"
+    DIB_DOCKER_VERSION: "28.2.1"
+    DIB_NVIDIA_CTK_VERSION: "1.17.7"
