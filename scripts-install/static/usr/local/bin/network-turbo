@@ -3,6 +3,7 @@
 turbo_cfg="/etc/network-turbo.conf"
 shellname="network-turbo"
 source_cert_file="/root/public/scripts/ssl_cert/squid-self-signed.pem"
+target_cert_file="/usr/local/share/ca-certificates/squid-self-signed.crt"
 
 proxy_set() {
     http_proxy=$([ ! -f "$turbo_cfg" ] || cat "$turbo_cfg" | grep http_proxy | awk -F '=' '{print $2}')
@@ -19,6 +20,7 @@ proxy_set() {
     export HTTPS_PROXY=$https_proxy
     export NO_PROXY=$no_proxy
 
+    # /etc/ssl/certs/squid-self-signed.pem -> /usr/local/share/ca-certificates/squid-self-signed.crt
     local pem_file="/etc/ssl/certs/squid-self-signed.pem"
     if [ -f $pem_file ]; then
         export REQUESTS_CA_BUNDLE=$pem_file
@@ -38,6 +40,24 @@ proxy_unset() {
     unset SSL_CERT_DIR
 }
 
+append_certifi_to_ca_bundle() {
+    local ca_bundle_file=$1
+    local PY=$(conda info --base)/bin/python
+    # make sure certifi is installed
+    if ! ${PY} -c "import certifi"; then
+        echo "certifi is not installed, install it"
+        # install certifi
+        ${PY} -m pip install certifi
+        if [ $? -ne 0 ]; then
+            echo "failed to install certifi"
+            return 1
+        fi
+    fi
+    echo "append certifi cert to ca bundle"
+    cat $(${PY} -m certifi) >>${ca_bundle_file}
+    return 0
+}
+
 setup_http_proxy() {
     local cfg_http_proxy="$([ ! -f "$turbo_cfg" ] || cat "$turbo_cfg" | grep http_proxy | awk -F '=' '{print $2}')"
     local http_proxy="${1:-${cfg_http_proxy}}"
@@ -54,12 +74,12 @@ setup_http_proxy() {
 
     # setup ca bundle
     local cert_file="${2:-"$source_cert_file"}"
-    local target_cert_file="/usr/local/share/ca-certificates/squid-self-signed.crt"
     if [ ! -f $cert_file ]; then
         echo "skip: ca bundle file $cert_file not found"
         return
     fi
     cp -vf "$cert_file" "$target_cert_file"
+    append_certifi_to_ca_bundle "$target_cert_file"
     sudo update-ca-certificates
 
     # auto enable proxy
