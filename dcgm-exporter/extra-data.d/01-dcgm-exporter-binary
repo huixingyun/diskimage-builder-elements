@@ -26,6 +26,7 @@ build_dcgm_exporter() {
 
 pack_dcgm_exporter() {
     cd /tmp/
+    mkdir -p ${TMP_MOUNT_PATH}/tmp/
     tar -czvf ${TMP_MOUNT_PATH}/tmp/dcgm-exporter.tar.gz \
         dcgm-exporter/cmd/dcgm-exporter/dcgm-exporter \
         dcgm-exporter/etc/default-counters.csv \
