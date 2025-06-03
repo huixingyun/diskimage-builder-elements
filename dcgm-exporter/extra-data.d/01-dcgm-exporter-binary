@@ -5,9 +5,11 @@ if [ ${DIB_DEBUG_TRACE:-0} -gt 0 ]; then
 fi
 set -euo pipefail
 
+GO_VERSION=1.24.3
+
 install_go() {
-    wget -O /tmp/go1.21.0.linux-amd64.tar.gz https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
-    rm -rf /usr/local/go && tar -C /usr/local -xzf /tmp/go1.21.0.linux-amd64.tar.gz
+    wget -O /tmp/go${GO_VERSION}.linux-amd64.tar.gz https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz
+    rm -rf /usr/local/go && tar -C /usr/local -xzf /tmp/go${GO_VERSION}.linux-amd64.tar.gz
     ln -s /usr/local/go/bin/go /usr/local/bin/go
 }
 

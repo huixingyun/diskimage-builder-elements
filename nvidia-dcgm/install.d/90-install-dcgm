@@ -6,7 +6,12 @@ fi
 set -euo pipefail
 
 if [ -n "${DCGM_VERSION}" ]; then
-    sudo apt-get -y install datacenter-gpu-manager="1:${DCGM_VERSION}"
+    major_version=${DCGM_VERSION%%.*}
+    if [ $major_version -eq 4 ]; then
+        sudo apt-get -y install datacenter-gpu-manager-4-core="1:${DCGM_VERSION}"
+    else
+        sudo apt-get -y install datacenter-gpu-manager="1:${DCGM_VERSION}"
+    fi
 else
     sudo apt-get -y install datacenter-gpu-manager
 fi
