@@ -9,10 +9,17 @@ version_short() {
     echo $1 | awk -F'.' '{print $1 "." $2}'
 }
 
+find_best_package_version() {
+    # $1: package name, $2: expected version (e.g. 560.35.05)
+    local pkg_name="$1"
+    local expected_version="$2"
+    apt-cache madison "$pkg_name" | grep "$expected_version" | awk '{print $3}' | head -n1
+}
+
 install_cuda_driver() {
     major_version=${CUDA_DRIVER_VERSION%%.*}
     sudo apt-get -y install --no-install-recommends \
-        cuda-drivers-${major_version}=${CUDA_DRIVER_VERSION}-1
+        cuda-drivers-${major_version}=$(find_best_package_version "cuda-drivers-${major_version}" "$CUDA_DRIVER_VERSION")
 }
 
 freeze_cuda_driver() {
@@ -24,10 +31,11 @@ freeze_cuda_driver() {
 # https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#common-installation-instructions-for-ubuntu
 install_cuda_toolkit() {
     cuda_version=$(version_short $CUDA_VERSION)
+    cuda_version=${cuda_version//./-}
     sudo apt-get -y install \
-        cuda-toolkit-${cuda_version//./-}=$CUDA_VERSION-1
+        cuda-toolkit-${cuda_version}=$(find_best_package_version "cuda-toolkit-${cuda_version}" "$CUDA_VERSION")
     sudo apt-get -y install \
-        nvidia-gds-${cuda_version//./-}=$CUDA_VERSION-1
+        nvidia-gds-${cuda_version}=$(find_best_package_version "nvidia-gds-${cuda_version}" "$CUDA_VERSION")
 }
 
 install_cudnn() {
@@ -40,8 +48,8 @@ install_cudnn() {
     elif [[ $major_cudnn_version -eq 9 ]]; then
         major_cuda_version=${CUDA_VERSION%%.*}
         sudo apt-get -y install \
-            libcudnn9-cuda-${major_cuda_version}=$CUDNN_VERSION-1 \
-            libcudnn9-dev-cuda-${major_cuda_version}=$CUDNN_VERSION-1
+            libcudnn9-cuda-${major_cuda_version}=$(find_best_package_version "libcudnn9-cuda-${major_cuda_version}" "$CUDNN_VERSION") \
+            libcudnn9-dev-cuda-${major_cuda_version}=$(find_best_package_version "libcudnn9-dev-cuda-${major_cuda_version}" "$CUDNN_VERSION")
     fi
 }
 
