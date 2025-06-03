@@ -19,22 +19,13 @@ find_best_package_version() {
 install_cuda_driver() {
     major_version=${CUDA_DRIVER_VERSION%%.*}
     sudo apt-get -y install \
-        cuda-drivers-${major_version}=$(find_best_package_version "cuda-drivers-${major_version}" "$CUDA_DRIVER_VERSION") \
-        nvidia-driver-${major_version}=$(find_best_package_version "nvidia-driver-${major_version}" "$CUDA_DRIVER_VERSION")
+        cuda-drivers-${major_version}=$(find_best_package_version "cuda-drivers-${major_version}" "$CUDA_DRIVER_VERSION")
 }
 
 freeze_cuda_driver() {
     major_version=${CUDA_DRIVER_VERSION%%.*}
     # prevent nvidia driver from being upgraded
     sudo apt-mark hold cuda-drivers-${major_version}
-    sudo apt-mark hold nvidia-driver-${major_version}
-}
-
-install_nvidia_dkms() {
-    major_version=${CUDA_DRIVER_VERSION%%.*}
-    # 安装时允许失败，包文件会被装进镜像
-    sudo apt-get -y install nvidia-dkms-${major_version}=$(find_best_package_version "cuda-drivers-${major_version}" "$CUDA_DRIVER_VERSION") || true
-    sudo apt-mark hold nvidia-dkms-${major_version} || true
 }
 
 # https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#common-installation-instructions-for-ubuntu
@@ -87,9 +78,8 @@ add_path() {
 
 # all in one
 install_all() {
-    # install_cuda_driver
-    # freeze_cuda_driver
-    install_nvidia_dkms
+    install_cuda_driver
+    freeze_cuda_driver
     echo "CUDA driver ${CUDA_DRIVER_VERSION} installed"
     install_cuda_toolkit
     echo "CUDA toolkit ${CUDA_VERSION} installed"
@@ -97,8 +87,6 @@ install_all() {
     echo "cuDNN ${CUDNN_VERSION} installed"
     add_path
     echo "add cuda bin to PATH"
-    add_nvidia_dkms_fix_service
-    echo "add nvidia dkms fix service"
 }
 
 install_all
