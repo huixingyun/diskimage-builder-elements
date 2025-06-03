@@ -32,8 +32,9 @@ freeze_cuda_driver() {
 
 install_nvidia_dkms() {
     major_version=${CUDA_DRIVER_VERSION%%.*}
-    sudo apt-get -y install nvidia-dkms-${major_version}=$(find_best_package_version "cuda-drivers-${major_version}" "$CUDA_DRIVER_VERSION")
-    sudo apt-mark hold nvidia-dkms-${major_version}
+    # 安装时允许失败，包文件会被装进镜像
+    sudo apt-get -y install nvidia-dkms-${major_version}=$(find_best_package_version "cuda-drivers-${major_version}" "$CUDA_DRIVER_VERSION") || true
+    sudo apt-mark hold nvidia-dkms-${major_version} || true
 }
 
 # https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#common-installation-instructions-for-ubuntu
@@ -61,6 +62,24 @@ install_cudnn() {
     fi
 }
 
+add_nvidia_dkms_fix_service() {
+    # 添加 systemd oneshot 脚本，开机自动修复 DKMS 包状态
+    cat <<'EOF' >/etc/systemd/system/nvidia-dkms-fix.service
+[Unit]
+Description=Fix NVIDIA DKMS package and build kernel modules on first boot
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'dpkg --configure -a && apt-get install -f -y && dkms autoinstall'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl enable nvidia-dkms-fix.service || true
+}
+
 add_path() {
     echo 'PATH="$PATH:/usr/local/cuda/bin"' >/etc/profile.d/099_cuda.sh
     chmod +x /etc/profile.d/099_cuda.sh
@@ -78,6 +97,8 @@ install_all() {
     echo "cuDNN ${CUDNN_VERSION} installed"
     add_path
     echo "add cuda bin to PATH"
+    add_nvidia_dkms_fix_service
+    echo "add nvidia dkms fix service"
 }
 
 install_all
