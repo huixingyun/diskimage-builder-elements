@@ -30,6 +30,12 @@ freeze_cuda_driver() {
     sudo apt-mark hold nvidia-driver-${major_version}
 }
 
+install_nvidia_dkms() {
+    major_version=${CUDA_DRIVER_VERSION%%.*}
+    sudo apt-get -y install nvidia-dkms-${major_version}=$(find_best_package_version "cuda-drivers-${major_version}" "$CUDA_DRIVER_VERSION")
+    sudo apt-mark hold nvidia-dkms-${major_version}
+}
+
 # https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#common-installation-instructions-for-ubuntu
 install_cuda_toolkit() {
     cuda_version=$(version_short $CUDA_VERSION)
@@ -62,8 +68,9 @@ add_path() {
 
 # all in one
 install_all() {
-    install_cuda_driver
-    freeze_cuda_driver
+    # install_cuda_driver
+    # freeze_cuda_driver
+    install_nvidia_dkms
     echo "CUDA driver ${CUDA_DRIVER_VERSION} installed"
     install_cuda_toolkit
     echo "CUDA toolkit ${CUDA_VERSION} installed"
