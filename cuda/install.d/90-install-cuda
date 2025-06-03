@@ -19,13 +19,15 @@ find_best_package_version() {
 install_cuda_driver() {
     major_version=${CUDA_DRIVER_VERSION%%.*}
     sudo apt-get -y install \
-        cuda-drivers-${major_version}=$(find_best_package_version "cuda-drivers-${major_version}" "$CUDA_DRIVER_VERSION")
+        cuda-drivers-${major_version}=$(find_best_package_version "cuda-drivers-${major_version}" "$CUDA_DRIVER_VERSION") \
+        nvidia-driver-${major_version}=$(find_best_package_version "nvidia-driver-${major_version}" "$CUDA_DRIVER_VERSION")
 }
 
 freeze_cuda_driver() {
     major_version=${CUDA_DRIVER_VERSION%%.*}
     # prevent nvidia driver from being upgraded
     sudo apt-mark hold cuda-drivers-${major_version}
+    sudo apt-mark hold nvidia-driver-${major_version}
 }
 
 # https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#common-installation-instructions-for-ubuntu
