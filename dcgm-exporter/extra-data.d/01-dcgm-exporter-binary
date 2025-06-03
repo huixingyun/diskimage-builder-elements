@@ -18,6 +18,7 @@ build_dcgm_exporter() {
     sudo apt-get -y install build-essential
     git clone -b "${DCGM_EXPORTER_VERSION}" https://github.com/NVIDIA/dcgm-exporter.git /tmp/dcgm-exporter
     cd /tmp/dcgm-exporter
+    unset TMPDIR
     make binary
 }
 
