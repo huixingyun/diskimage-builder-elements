@@ -2,3 +2,4 @@
 scripts-install/scripts.tgz
 /tmp
 /output
+*.log
