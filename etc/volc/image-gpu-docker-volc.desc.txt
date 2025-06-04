@@ -1,0 +1,1 @@
+ubuntu 22.04, nvidia_driver 560.35.05, docker-ce 28.2.2, nvidia-container-toolkit 1.17.8, miniconda py310_23.11.0-2, jupyterlab 4.4.3
