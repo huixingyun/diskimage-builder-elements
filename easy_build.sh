@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-CURRENT_DIR="$(dirname "$0")"
+CURRENT_DIR="$(cd "$(dirname "$0")" && pwd)"
 pushd $CURRENT_DIR
 git pull
 popd
