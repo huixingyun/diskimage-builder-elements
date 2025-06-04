@@ -1,1 +1,0 @@
-ubuntu 22.04, nvidia_driver 560.35.05, miniconda py310_23.11.0-2, jupyterlab 4.4.3, cuda 12.6.3, cudnn 9.10.1.4
