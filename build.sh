@@ -12,4 +12,8 @@ export ELEMENTS_PATH="$(dirname "$0")"
 export TMPDIR="$(dirname "$0")/tmp"
 mkdir -p "$TMPDIR"
 
+if ! command -v diskimage-builder &>/dev/null; then
+    pip3 install diskimage-builder
+fi
+
 diskimage-builder $@
