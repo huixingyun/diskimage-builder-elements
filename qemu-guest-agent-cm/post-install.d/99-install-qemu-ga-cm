@@ -6,7 +6,7 @@ fi
 set -eu
 set -o pipefail
 
-echo ">> install hcp"
+echo ">> install qemu-guest-agent-cm"
 
 cd /tmp
 wget --content-disposition "${QEMU_GA_CM_URL}"
