@@ -18,7 +18,7 @@
   no-tmpfs: true
   environment:
     DIB_RELEASE: jammy # Ubuntu Server 22.04 LTS
-    DIB_CLOUD_INIT_DATASOURCES: "OpenStack"
+    DIB_CLOUD_INIT_DATASOURCES: "OpenStack,ConfigDrive"
     DIB_OFFLINE: "true"
     DIB_MINICONDA_RELEASE: py310_23.11.0-2
     DIB_TIMEZONE: Asia/Shanghai
