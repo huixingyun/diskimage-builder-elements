@@ -84,125 +84,187 @@ image-data image-name_20241225
 
 ## Local Image Testing
 
-### 1. Launch Image with QEMU
+**Note:** All test temporary files (cloud-init configurations, VM logs, etc.) are automatically stored in the `tmp/` directory to keep the workspace clean.
 
-Assuming you have generated the image file `image-gpu-mini.qcow2`, you can start it with the following command:
+### 1. Complete Testing with Test Scripts
 
-```sh
-qemu-system-x86_64 \
-  -m 2048 \
-  -smp 2 \
-  -drive file=image-gpu-mini.qcow2,format=qcow2 \
-  -net nic -net user,hostfwd=tcp::2222-:22 \
-  -nographic
-```
+It is recommended to use the provided test scripts for image testing, which support flexible parameter configuration:
 
-- `-m 2048`: Allocate 2GB memory
-- `-smp 2`: Allocate 2 CPUs
-- `-drive file=...`: Specify image file
-- `-net user,hostfwd=tcp::2222-:22`: Forward local port 2222 to VM port 22
-- `-nographic`: Display serial output in terminal
-
-### 2. SSH Login Testing
-
-After the VM starts, you can login with the following command (username and password depend on image configuration):
+#### 1.1 Generate cloud-init Configuration
 
 ```sh
-ssh -p 2222 <username>@localhost
+# Use default configuration (username: testuser, hostname: test-vm)
+./test/generate-configdrive.sh
+
+# Custom configuration
+./test/generate-configdrive.sh [username] [hostname] [instance-id]
+
+# Example: custom user and hostname
+./test/generate-configdrive.sh ubuntu my-test-vm iid-test01
 ```
 
-### 3. Test cloud-init Process
+The script will automatically:
+- Check and generate SSH key pair (if not exists)
+- Generate ConfigDrive format `user_data` and `meta_data.json` configuration files in `tmp/configdrive/`
+- Create `tmp/seed.iso` cloud-init data disk
 
-1. **Use test script:**
+#### 1.2 Start Test Virtual Machine
 
-   ```sh
-   # Generate cloud-init configuration and ISO image
-   ./test/generate-cloudinit-config.sh [username] [hostname] [instance-id]
+```sh
+# Use default parameters
+./test/start-test-vm.sh
 
-   # Example: use default configuration
-   ./test/generate-cloudinit-config.sh
+# Specify image file
+./test/start-test-vm.sh ../output/image-gpu-mini_20241225.qcow2
 
-   # Example: custom configuration
-   ./test/generate-cloudinit-config.sh myuser my-vm iid-test01
-   ```
+# Specify all parameters [image_file] [memory_MB] [cpu_cores] [ssh_port]
+./test/start-test-vm.sh image.qcow2 8192 8 2223
 
-   The script will automatically:
+# Show help information
+./test/start-test-vm.sh --help
+```
 
-   - Check and generate SSH key pair (if not exists)
-   - Generate `user-data` and `meta-data` configuration files
-   - Create `seed.iso` cloud-init data disk
+**Default Parameters:**
+- Memory: 4096MB
+- CPU: 4 cores
+- SSH Port: 2222
+- Enable KVM hardware acceleration and VirtIO drivers
 
-2. **Start test VM:**
+**QEMU VM Exit Methods:**
 
-   ```sh
-   # Start with default configuration
-   ./test/start-test-vm.sh
+```sh
+# Method 1: Use QEMU monitor command (recommended)
+# Press Ctrl+A, then press C to enter QEMU monitor mode
+# At the monitor prompt, type:
+(qemu) quit
 
-   # Start with custom configuration
-   ./test/start-test-vm.sh [image-file] [memory-MB] [cpu-count] [ssh-port]
+# Method 2: Keyboard shortcut to exit directly
+# Press Ctrl+A, then press X to exit QEMU immediately
 
-   # Example: specify image and configuration
-   ./test/start-test-vm.sh image-gpu-mini.qcow2 4096 4 2222
-   ```
+# Method 3: Normal shutdown from inside VM (safest)
+# SSH login to VM and execute:
+sudo shutdown -h now
+# or
+sudo poweroff
 
-   **QEMU VM Exit Methods:**
+# Method 4: Force exit (only when QEMU is unresponsive)
+# In another terminal, find QEMU process and kill it:
+ps aux | grep qemu
+kill -9 <qemu-pid>
+```
 
-   ```sh
-   # Method 1: Use QEMU monitor command (recommended)
-   # Press Ctrl+A, then press C to enter QEMU monitor mode
-   # At the monitor prompt, type:
-   (qemu) quit
+#### 1.3 Test SSH Connection and cloud-init
 
-   # Method 2: Keyboard shortcut to exit directly
-   # Press Ctrl+A, then press X to exit QEMU immediately
+```sh
+# Test SSH connection with default parameters
+./test/test-ssh.sh
 
-   # Method 3: Normal shutdown from inside VM (safest)
-   # SSH login to VM and execute:
-   sudo shutdown -h now
-   # or
-   sudo poweroff
+# Specify SSH port
+./test/test-ssh.sh 2223
 
-   # Method 4: Force exit if QEMU is unresponsive
-   # In another terminal, find QEMU process and kill it:
-   ps aux | grep qemu
-   kill -9 <qemu-pid>
-   ```
+# Specify port and username
+./test/test-ssh.sh 2222 ubuntu
 
-   **Notes:**
+# Specify all parameters [ssh_port] [username] [host] [max_attempts] [wait_interval_seconds]
+./test/test-ssh.sh 2222 testuser localhost 5 15
 
-   - Recommended to use Method 3 (shutdown from inside VM) or Method 1 (monitor quit) for safe exit
-   - Methods 2 and 4 may cause VM filesystem corruption, use only when necessary
-   - In `-nographic` mode, all input is sent to the VM, use `Ctrl+A` to switch to QEMU control mode
+# Show help information
+./test/test-ssh.sh --help
+```
 
-3. **Login with SSH public key:**
+The script will automatically:
+- Check if VM process is running
+- Test SSH port connectivity
+- Attempt SSH connection and collect system information
+- Check cloud-init status and logs
+- Provide detailed troubleshooting suggestions
 
-   After the VM starts, you can login directly using SSH keys:
+#### 1.4 One-Click Complete Testing
 
-   ```sh
-   # Login with configured user
-   ssh -p 2222 testuser@localhost
+For convenience, a complete testing script is provided that automates the entire process:
 
-   # If root user public key is configured, you can also login as root directly
-   ssh -p 2222 root@localhost
+```sh
+# Auto-find today's image and run complete test
+./test/test-complete.sh
 
-   # If SSH key is not in default location, specify key file
-   ssh -p 2222 -i ~/.ssh/id_rsa testuser@localhost
-   ```
+# Specify image file (path relative to current working directory)
+./test/test-complete.sh output/image-gpu-mini_20241225.qcow2
 
-4. **Verify cloud-init effectiveness:**
+# Specify image, username and hostname
+./test/test-complete.sh output/image.qcow2 ubuntu my-vm
 
-   - After SSH login, check if user, hostname, etc. are set according to `user-data`.
-   - View cloud-init logs:
-     ```sh
-     sudo cat /var/log/cloud-init.log
-     sudo cat /var/log/cloud-init-output.log
-     ```
-   - Verify SSH configuration:
+# Show help information
+./test/test-complete.sh --help
+```
 
-     ```sh
-     # Check if SSH public key is configured correctly
-     cat ~/.ssh/authorized_keys
+**Important Note:** When specifying image file paths, use paths relative to your current working directory (where you run the command), not relative to the script location. The script will automatically convert relative paths to absolute paths.
 
-     # Check SSH service configuration
-     sudo cat /etc/ssh/sshd_config | grep -E "(PubkeyAuthentication|PasswordAuthentication)"
-     ```
+This script will automatically:
+1. Find and verify image files
+2. Generate cloud-init configuration
+3. Start test VM
+4. Test SSH connection and system functionality
+5. Optionally test CUDA and PyTorch environment
+
+#### 1.5 GPU and Deep Learning Environment Testing
+
+**CUDA Installation Verification:**
+
+```sh
+# Run CUDA test inside VM
+ssh -p 2222 testuser@localhost
+sudo /root/verify_cuda.sh
+```
+
+**PyTorch Environment Testing:**
+
+```sh
+# Run PyTorch test inside VM
+ssh -p 2222 testuser@localhost
+python3 /root/verify_pytorch.py
+```
+
+### 2. Manual SSH Login Testing
+
+After the VM starts, you can login with the following command:
+
+```sh
+# Use configured user login
+ssh -p 2222 testuser@localhost
+
+# If root user public key is configured, can also login directly as root
+ssh -p 2222 root@localhost
+
+# If SSH key is not in default location, specify key file
+ssh -p 2222 -i ~/.ssh/id_rsa testuser@localhost
+```
+
+### 3. Verify cloud-init Configuration Effect
+
+- SSH login, check if user, hostname, etc. are set according to `user_data`
+- Check cloud-init logs:
+  ```sh
+  sudo cat /var/log/cloud-init.log
+  sudo cat /var/log/cloud-init-output.log
+  ```
+- Verify SSH configuration:
+  ```sh
+  # Check if SSH public key is correctly configured
+  cat ~/.ssh/authorized_keys
+
+  # Check SSH service configuration
+  sudo cat /etc/ssh/sshd_config | grep -E "(PubkeyAuthentication|PasswordAuthentication)"
+  ```
+
+### 4. Test Script Description
+
+Test directory contains the following scripts:
+
+- `generate-configdrive.sh` - Generate ConfigDrive format cloud-init configuration
+- `start-test-vm.sh` - Flexible start test VM, support parameter customization
+- `test-ssh.sh` - SSH connection test and cloud-init configuration verification
+- `test-complete.sh` - One-click complete testing script that automates the entire process
+- `verify_cuda.sh` - CUDA installation and functionality verification
+- `verify_pytorch.py` - Complete PyTorch environment test
+
+All scripts support `--help` parameter to view detailed usage.
