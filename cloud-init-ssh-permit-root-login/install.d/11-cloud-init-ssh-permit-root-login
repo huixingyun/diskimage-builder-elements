@@ -17,5 +17,5 @@ merge_how:
     settings: [no_replace, recurse_list]
 bootcmd:
   - sed -i 's/#PermitRootLogin .*/PermitRootLogin yes/' /etc/ssh/sshd_config
-  - service ssh reload
+  - systemctl is-active ssh.service && systemctl reload ssh.service || systemctl restart ssh.service
 EOF
