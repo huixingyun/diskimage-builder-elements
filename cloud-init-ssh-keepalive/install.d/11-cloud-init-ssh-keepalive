@@ -18,5 +18,5 @@ merge_how:
 bootcmd:
   - sed -i 's/#ClientAliveInterval .*/ClientAliveInterval 60/' /etc/ssh/sshd_config
   - sed -i 's/#ClientAliveCountMax .*/ClientAliveCountMax 10/' /etc/ssh/sshd_config
-  - systemctl is-active ssh.service && systemctl reload ssh.service || systemctl restart ssh.service
+  - systemctl reload ssh.service || true
 EOF
