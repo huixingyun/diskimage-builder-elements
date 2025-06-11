@@ -1,2 +1,5 @@
 *.sw[a-z]
 scripts-install/scripts.tgz
+/tmp
+/output
+*.log

@@ -5,6 +5,9 @@ check_cloud_init_datasource() {
     if cloud-id | grep -q openstack; then
         echo "health-check: cloud-init datasource is openstack"
         return 0
+    elif cloud-id | grep -q configdrive; then
+        echo "health-check: cloud-init datasource is configdrive"
+        return 0
     else
         echo "health-check: cloud-init datasource is $(cloud-id)"
         return 1

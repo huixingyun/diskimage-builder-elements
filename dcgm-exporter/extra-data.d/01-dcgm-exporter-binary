@@ -5,15 +5,20 @@ if [ ${DIB_DEBUG_TRACE:-0} -gt 0 ]; then
 fi
 set -euo pipefail
 
+GO_VERSION=1.24.3
+
+unset TMPDIR
+
 install_go() {
-    wget -O /tmp/go1.21.0.linux-amd64.tar.gz https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
-    rm -rf /usr/local/go && tar -C /usr/local -xzf /tmp/go1.21.0.linux-amd64.tar.gz
+    wget -O /tmp/go${GO_VERSION}.linux-amd64.tar.gz https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz
+    rm -rf /usr/local/go && tar -C /usr/local -xzf /tmp/go${GO_VERSION}.linux-amd64.tar.gz
     ln -s /usr/local/go/bin/go /usr/local/bin/go
 }
 
 build_dcgm_exporter() {
     sudo apt-get update
     sudo apt-get -y install build-essential
+    rm -rf /tmp/dcgm-exporter
     git clone -b "${DCGM_EXPORTER_VERSION}" https://github.com/NVIDIA/dcgm-exporter.git /tmp/dcgm-exporter
     cd /tmp/dcgm-exporter
     make binary
@@ -21,6 +26,7 @@ build_dcgm_exporter() {
 
 pack_dcgm_exporter() {
     cd /tmp/
+    mkdir -p ${TMP_MOUNT_PATH}/tmp/
     tar -czvf ${TMP_MOUNT_PATH}/tmp/dcgm-exporter.tar.gz \
         dcgm-exporter/cmd/dcgm-exporter/dcgm-exporter \
         dcgm-exporter/etc/default-counters.csv \

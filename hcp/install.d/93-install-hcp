@@ -7,6 +7,5 @@ set -eu
 set -o pipefail
 
 echo ">> install hcp"
-
-curl -sfL -o "/usr/local/bin/hcp" "${HCP_REPO}/hcp-${HCP_VERSION}"
+mv -v /tmp/hcp /usr/local/bin/hcp
 chmod +x "/usr/local/bin/hcp"

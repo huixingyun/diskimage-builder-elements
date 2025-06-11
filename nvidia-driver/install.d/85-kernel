@@ -16,8 +16,7 @@ check_kernel() {
 }
 
 install_kernel() {
-    KERNEL_VERSION="$(ls /boot/vmlinuz*generic | sort -n | tail -n1 | cut -d'-' -f2-)"
-    sudo apt-get -y install linux-headers-$KERNEL_VERSION
+    sudo apt-get -y install build-essential linux-headers-$(uname -r) dkms
 }
 
 freeze_kernel() {

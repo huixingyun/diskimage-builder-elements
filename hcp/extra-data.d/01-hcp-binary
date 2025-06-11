@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [ ${DIB_DEBUG_TRACE:-0} -gt 0 ]; then
+    set -x
+fi
+set -euo pipefail
+
+echo ">> download hcp binary"
+
+if [ ! -f "/tmp/hcp" ]; then
+    curl -fL -o "/tmp/hcp" "${HCP_REPO}/hcp-${HCP_VERSION}"
+fi
+
+cp /tmp/hcp ${TMP_MOUNT_PATH}/tmp/

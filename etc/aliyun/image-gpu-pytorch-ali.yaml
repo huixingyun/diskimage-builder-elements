@@ -1,0 +1,38 @@
+- imagename: image-gpu-pytorch-ali
+  elements:
+    # base
+    - vm
+    - ubuntu
+    - block-device-efi
+    - grub2
+    - image-base-aliyun
+    # webapp
+    - jupyterlab
+    # mount
+    - rclone
+    # monitor
+    - node-exporter
+    - prometheus
+    # gpu
+    - dcgm-exporter
+    - nvidia-driver
+    # AI Framework
+    - conda-pytorch
+  debug-trace: 0
+  no-tmpfs: true
+  environment:
+    DIB_RELEASE: jammy # Ubuntu Server 22.04 LTS
+    DIB_CLOUD_INIT_DATASOURCES: "AliYun,ConfigDrive,OpenStack"
+    DIB_OFFLINE: "true"
+    DIB_MINICONDA_RELEASE: py310_23.11.0-2
+    DIB_TIMEZONE: Asia/Shanghai
+    DIB_DCGM_VERSION: "4.2.3-2"
+    DIB_DCGM_EXPORTER_VERSION: "4.2.0-4.1.0"
+    DIB_PROMETHEUS_VERSION: "2.49.1"
+    DIB_NODE_EXPORTER_VER: "1.7.0"
+    DIB_JUPYTERLAB_VER: "4.4.3"
+    DIB_NVIDIA_DRIVER_VERSION: "560.35.05"
+    DIB_PYTORCH_VERSION: "2.7.0"
+    DIB_PYTORCH_TORCHAUDIO_VERSION: "2.7.0"
+    DIB_PYTORCH_TORCHVISION_VERSION: "0.22.0"
+    DIB_PYTORCH_CUDA_VERSION: "12.6"
