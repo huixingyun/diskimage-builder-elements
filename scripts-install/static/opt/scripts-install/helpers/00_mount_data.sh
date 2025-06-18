@@ -91,7 +91,7 @@ Description=grow partition "$partition" and trigger mount "$mount_point"
 After=cloud-final.service
 [Service]
 Type=oneshot
-ExecStartPre=-bash -c 'source /opt/scripts-install/helpers/00_mount_data.sh && grow_partition "$partition"'
+ExecStartPre=-bash -c 'source /opt/scripts-install/helpers/00_mount_data.sh && grow_partition "$partition" "$mount_point"'
 ExecStart=bash -c 'ls "${mount_point}" | head -1'
 [Install]
 WantedBy=cloud-init.target
@@ -103,35 +103,78 @@ EOF
 }
 
 grow_partition() {
+    set -euo pipefail
+
     local partition="$1"
+    local mount_point="${2:-"/root/data"}"
 
-    # get device from partition
-    local device=/dev/$(lsblk -o PKNAME -bnr "${partition}")
-
-    # compare device size and partition size
+    # 1. Get device and filesystem size without mounting
+    local device="/dev/$(lsblk -o PKNAME -bnr "${partition}")"
     local device_size=$(lsblk -o SIZE -bnr "${device}" | head -n 1)
-    local partition_size=$(df -B1 "${partition}" | awk 'NR==2 {print $2}')
-    local diff_size=$((device_size - partition_size))
 
-    # if diff_size <= 1GB, do nothing
+    # Get filesystem size using dumpe2fs
+    local block_count=$(dumpe2fs -h "${partition}" 2>/dev/null | awk -F: '/Block count/ {print $2}' | tr -d '[:space:]')
+    local block_size=$(dumpe2fs -h "${partition}" 2>/dev/null | awk -F: '/Block size/ {print $2}' | tr -d '[:space:]')
+
+    if [[ ! "$block_count" =~ ^[0-9]+$ ]] || [[ ! "$block_size" =~ ^[0-9]+$ ]]; then
+        echo "Failed to get filesystem info from ${partition}, it may not be an ext4 filesystem or is corrupted. Skipping grow."
+        return 0
+    fi
+    local fs_size=$((block_count * block_size))
+    local diff_size=$((device_size - fs_size))
+
     if [ "$diff_size" -le 1073741824 ]; then
-        echo "partition ${partition} will not grow, diff_size=${diff_size}"
-        return
+        echo "Filesystem on ${partition} will not grow, size difference is ${diff_size} bytes."
+        return 0
     fi
 
-    umount "${partition}" &>/dev/null
+    # 2. Stop automount and unmount if necessary
+    local filename="${mount_point//\//-}"
+    filename="${filename#-}"
 
-    growpart "${device}" 1 || true
-
-    if ! e2fsck -p -f "${partition}"; then
-        echo "Failed to check filesystem on ${partition}"
-        return 1
+    echo "Stopping automount for ${mount_point}..."
+    systemctl stop "${filename}.automount"
+    if mountpoint -q "$mount_point"; then
+        echo "Unmounting ${mount_point}..."
+        umount "${mount_point}"
     fi
 
-    if ! resize2fs "${partition}"; then
-        echo "Failed to resize filesystem on ${partition}"
-        return 1
-    fi
+    # 3. Wait for device to be free
+    local count=0
+    while lsof "${partition}" >/dev/null 2>&1; do
+        if [ $count -ge 10 ]; then
+            echo "Device ${partition} is still in use after 10s, aborting."
+            lsof "${partition}"
+            systemctl start "${filename}.automount"
+            return 1
+        fi
+        sleep 1
+        count=$((count + 1))
+    done
 
-    echo "grow partition ${partition} success"
+    # 4. Grow partition and filesystem
+    echo "Growing partition ${partition}..."
+
+    # Use flock on the partition device to prevent race conditions with udev.
+    (
+        flock -x 9
+        set -e
+        echo "Lock acquired on ${partition}..."
+        growpart "${device}" 1 || true
+        e2fsck -p -f "${partition}" && resize2fs "${partition}"
+        echo "Grow operation completed, releasing lock."
+    ) 9>"${partition}"
+
+    local ret=$?
+
+    # 5. Start automount
+    echo "Starting automount for ${mount_point}..."
+    systemctl start "${filename}.automount"
+
+    if [ "$ret" -eq 0 ]; then
+        echo "grow partition ${partition} success"
+    else
+        echo "grow partition ${partition} failed with exit code $ret"
+    fi
+    return "$ret"
 }
