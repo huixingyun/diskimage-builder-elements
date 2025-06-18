@@ -169,80 +169,26 @@ grow_partition() {
         partprobe "${device}"
         udevadm settle
 
-        # Additional device state refresh
-        echo "Refreshing device state..."
-        blockdev --rereadpt "${device}" 2>/dev/null || true
-        blockdev --flushbufs "${partition}" 2>/dev/null || true
+        # Kernel-level synchronization
         sync
         echo 1 >/proc/sys/vm/drop_caches
 
-        # Force release any remaining handles on the device
-        echo "Checking for processes using ${partition}..."
-        if lsof "${partition}" 2>/dev/null; then
-            echo "Found processes using ${partition}, attempting to terminate..."
-            fuser -k "${partition}" 2>/dev/null || true
-            sleep 1
-        fi
-
-        # Final check - if still busy, show detailed info
-        if lsof "${partition}" >/dev/null 2>&1; then
-            echo "Device ${partition} is still busy after cleanup attempt:"
-            lsof "${partition}" 2>/dev/null || true
-            fuser -v "${partition}" 2>/dev/null || true
-            echo "Attempting resize anyway..."
-        else
-            echo "No processes found using ${partition} by lsof"
-        fi
-
-        # Show current mount status
-        echo "Current mount status:"
-        mount | grep "${partition}" || echo "Not mounted"
-
-        # Show device info
-        echo "Device info for ${partition}:"
-        lsblk "${partition}" 2>/dev/null || true
-
-        # Try a different approach - mount first then resize online
-        echo "Attempting online resize approach..."
-
-        # Create temporary mount point
+        # Online resize approach - mount first then resize
         local temp_mount="/tmp/resize_mount_$$"
         mkdir -p "$temp_mount"
 
         if mount "${partition}" "$temp_mount" 2>/dev/null; then
-            echo "Successfully mounted ${partition}, attempting online resize..."
-            if resize2fs "${partition}"; then
-                echo "Online resize successful"
-                umount "$temp_mount"
-                rmdir "$temp_mount"
-                echo "Grow operation completed, releasing lock."
-            else
-                echo "Online resize failed, unmounting and trying offline..."
-                umount "$temp_mount"
-                rmdir "$temp_mount"
-
-                # Fall back to offline method
-                echo "Attempting offline resize2fs on ${partition}..."
-                if ! resize2fs "${partition}"; then
-                    echo "resize2fs failed, attempting filesystem check first..."
-                    echo "Running e2fsck on ${partition}..."
-                    e2fsck -p -f "${partition}"
-                    resize2fs "${partition}"
-                fi
-                echo "Grow operation completed, releasing lock."
-            fi
+            echo "Mounted ${partition}, performing online resize..."
+            resize2fs "${partition}"
+            umount "$temp_mount"
+            rmdir "$temp_mount"
+            echo "Online resize completed successfully."
         else
-            echo "Mount failed, trying offline resize..."
-            # Try resize2fs directly first - it will fail safely if filesystem has issues
-            echo "Attempting offline resize2fs on ${partition}..."
-            if ! resize2fs "${partition}"; then
-                echo "resize2fs failed, attempting filesystem check first..."
-                echo "Running e2fsck on ${partition}..."
-                e2fsck -p -f "${partition}"
-                resize2fs "${partition}"
-            fi
-            echo "Grow operation completed, releasing lock."
+            echo "Mount failed, attempting offline resize..."
+            resize2fs "${partition}"
+            echo "Offline resize completed successfully."
         fi
+        echo "Grow operation completed, releasing lock."
     ) 9>"$lock_file"
 
     local ret=$?
