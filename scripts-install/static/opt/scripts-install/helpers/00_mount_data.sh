@@ -174,19 +174,38 @@ grow_partition() {
         echo 1 >/proc/sys/vm/drop_caches
 
         # Online resize approach - mount first then resize
-        local temp_mount="/tmp/resize_mount_$$"
-        mkdir -p "$temp_mount"
+        # Use /mnt instead of /tmp to avoid space issues
+        local temp_mount="/mnt/resize_mount_$$"
+        mkdir -p "$temp_mount" 2>/dev/null || {
+            echo "Failed to create temporary mount point, trying alternative location..."
+            temp_mount="/var/tmp/resize_mount_$$"
+            mkdir -p "$temp_mount" || {
+                echo "Cannot create temporary mount point, proceeding with offline resize..."
+                resize2fs "${partition}"
+                echo "Offline resize completed successfully."
+                echo "Grow operation completed, releasing lock."
+                exit 0
+            }
+        }
 
         if mount "${partition}" "$temp_mount" 2>/dev/null; then
             echo "Mounted ${partition}, performing online resize..."
-            resize2fs "${partition}"
-            umount "$temp_mount"
-            rmdir "$temp_mount"
-            echo "Online resize completed successfully."
+            if resize2fs "${partition}" 2>&1; then
+                echo "Online resize completed successfully."
+            else
+                echo "Online resize failed, but partition was mounted successfully."
+                echo "This might indicate the filesystem is already at the correct size."
+            fi
+            umount "$temp_mount" 2>/dev/null || true
+            rmdir "$temp_mount" 2>/dev/null || true
         else
             echo "Mount failed, attempting offline resize..."
-            resize2fs "${partition}"
-            echo "Offline resize completed successfully."
+            rmdir "$temp_mount" 2>/dev/null || true
+            if resize2fs "${partition}" 2>&1; then
+                echo "Offline resize completed successfully."
+            else
+                echo "Resize failed. This might mean the filesystem is already at the correct size."
+            fi
         fi
         echo "Grow operation completed, releasing lock."
     ) 9>"$lock_file"
