@@ -91,7 +91,7 @@ Description=grow partition "$partition" and trigger mount "$mount_point"
 After=cloud-final.service
 [Service]
 Type=oneshot
-ExecStartPre=-bash -c 'source /opt/scripts-install/helpers/00_mount_data.sh && grow_partition "$partition" "$mount_point"'
+ExecStartPre=bash -c 'source /opt/scripts-install/helpers/00_mount_data.sh && grow_partition "$partition" "$mount_point"'
 ExecStart=bash -c 'ls "${mount_point}" | head -1'
 [Install]
 WantedBy=cloud-init.target
@@ -134,6 +134,7 @@ grow_partition() {
 
     echo "Stopping automount for ${mount_point}..."
     systemctl stop "${filename}.automount"
+    systemctl stop "${filename}.mount"
     if mountpoint -q "$mount_point"; then
         echo "Unmounting ${mount_point}..."
         umount "${mount_point}"
@@ -155,17 +156,97 @@ grow_partition() {
     # 4. Grow partition and filesystem
     echo "Growing partition ${partition}..."
 
-    # Use flock on the partition device to prevent race conditions with udev.
+    # Use flock on a dedicated lock file to prevent race conditions.
+    local safe_partition_name
+    safe_partition_name=$(basename "$partition")
+    local lock_file="/var/lock/grow_partition_${safe_partition_name}.lock"
+    touch "$lock_file"
     (
         flock -x 9
         set -e
-        echo "Lock acquired on ${partition}..."
+        echo "Lock acquired for ${partition}..."
         growpart "${device}" 1 || true
-        e2fsck -p -f "${partition}" && resize2fs "${partition}"
-        echo "Grow operation completed, releasing lock."
-    ) 9>"${partition}"
+        partprobe "${device}"
+        udevadm settle
+
+        # Additional device state refresh
+        echo "Refreshing device state..."
+        blockdev --rereadpt "${device}" 2>/dev/null || true
+        blockdev --flushbufs "${partition}" 2>/dev/null || true
+        sync
+        echo 1 >/proc/sys/vm/drop_caches
+
+        # Force release any remaining handles on the device
+        echo "Checking for processes using ${partition}..."
+        if lsof "${partition}" 2>/dev/null; then
+            echo "Found processes using ${partition}, attempting to terminate..."
+            fuser -k "${partition}" 2>/dev/null || true
+            sleep 1
+        fi
+
+        # Final check - if still busy, show detailed info
+        if lsof "${partition}" >/dev/null 2>&1; then
+            echo "Device ${partition} is still busy after cleanup attempt:"
+            lsof "${partition}" 2>/dev/null || true
+            fuser -v "${partition}" 2>/dev/null || true
+            echo "Attempting resize anyway..."
+        else
+            echo "No processes found using ${partition} by lsof"
+        fi
+
+        # Show current mount status
+        echo "Current mount status:"
+        mount | grep "${partition}" || echo "Not mounted"
+
+        # Show device info
+        echo "Device info for ${partition}:"
+        lsblk "${partition}" 2>/dev/null || true
+
+        # Try a different approach - mount first then resize online
+        echo "Attempting online resize approach..."
+
+        # Create temporary mount point
+        local temp_mount="/tmp/resize_mount_$$"
+        mkdir -p "$temp_mount"
+
+        if mount "${partition}" "$temp_mount" 2>/dev/null; then
+            echo "Successfully mounted ${partition}, attempting online resize..."
+            if resize2fs "${partition}"; then
+                echo "Online resize successful"
+                umount "$temp_mount"
+                rmdir "$temp_mount"
+                echo "Grow operation completed, releasing lock."
+            else
+                echo "Online resize failed, unmounting and trying offline..."
+                umount "$temp_mount"
+                rmdir "$temp_mount"
+
+                # Fall back to offline method
+                echo "Attempting offline resize2fs on ${partition}..."
+                if ! resize2fs "${partition}"; then
+                    echo "resize2fs failed, attempting filesystem check first..."
+                    echo "Running e2fsck on ${partition}..."
+                    e2fsck -p -f "${partition}"
+                    resize2fs "${partition}"
+                fi
+                echo "Grow operation completed, releasing lock."
+            fi
+        else
+            echo "Mount failed, trying offline resize..."
+            # Try resize2fs directly first - it will fail safely if filesystem has issues
+            echo "Attempting offline resize2fs on ${partition}..."
+            if ! resize2fs "${partition}"; then
+                echo "resize2fs failed, attempting filesystem check first..."
+                echo "Running e2fsck on ${partition}..."
+                e2fsck -p -f "${partition}"
+                resize2fs "${partition}"
+            fi
+            echo "Grow operation completed, releasing lock."
+        fi
+    ) 9>"$lock_file"
 
     local ret=$?
+    rm -f "$lock_file"
 
     # 5. Start automount
     echo "Starting automount for ${mount_point}..."
