@@ -23,8 +23,11 @@ proxy_set() {
     # /etc/ssl/certs/squid-self-signed.pem -> /usr/local/share/ca-certificates/squid-self-signed.crt
     local pem_file="/etc/ssl/certs/squid-self-signed.pem"
     if [ -f $pem_file ]; then
+        # support python requests
         export REQUESTS_CA_BUNDLE=$pem_file
-        export SSL_CERT_DIR=/etc/ssl/certs
+        # support rustls-native-certs
+        export SSL_CERT_FILE=$pem_file
+        export SSL_CERT_DIR=$(dirname $pem_file)
     fi
 }
 
@@ -37,6 +40,7 @@ proxy_unset() {
     unset NO_PROXY
 
     unset REQUESTS_CA_BUNDLE
+    unset SSL_CERT_FILE
     unset SSL_CERT_DIR
 }
 
