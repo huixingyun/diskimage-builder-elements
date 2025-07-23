@@ -31,4 +31,4 @@ fi
 mkdir -p "${APP_INSTALL_DIR}"
 tar -xzf "${APP_FILE}" -C "${APP_INSTALL_DIR}"
 
-echo "Installed ${APP_NAME} ${APP_VERSION} to ${APP_INSTALL_DIR}"
+echo "Installed ${APP_FILE} to ${APP_INSTALL_DIR}"
