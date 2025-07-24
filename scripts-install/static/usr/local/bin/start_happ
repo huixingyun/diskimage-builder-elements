@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -e
+
+APP_NAME="$1"
+APP_USERNAME="${2-"admin"}"
+APP_PASSWORD="${3-"admin"}"
+
+# APP_NAME is required
+if [ -z "${APP_NAME}" ]; then
+    echo "APP_NAME is required"
+    exit 1
+fi
+
+APP_INSTALL_DIR="/usr/local/${APP_NAME}"
+APP_START_FILE="${APP_INSTALL_DIR}/start"
+
+if [ ! -f "${APP_START_FILE}" ]; then
+    echo "App start file ${APP_START_FILE} not found"
+    exit 1
+fi
+
+# start the app
+chmod +x "${APP_START_FILE}"
+"${APP_START_FILE}" "${APP_USERNAME}" "${APP_PASSWORD}" >/tmp/happ.log 2>&1
+
+echo "Started ${APP_NAME}"
