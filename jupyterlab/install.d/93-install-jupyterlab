@@ -10,13 +10,16 @@ echo "############################################################"
 echo "# install jupyter using conda                              #"
 echo "############################################################"
 
+# create conda environment
+conda create -n ${DIB_JUPYTERLAB_CONDA} -y python=${DIB_JUPYTERLAB_PYTHON}
+
 if [ -n "${DIB_JUPYTERLAB_VER}" ]; then
-    $(conda info --base)/bin/python3 -m pip install jupyterlab==${DIB_JUPYTERLAB_VER}
+    conda run -n ${DIB_JUPYTERLAB_CONDA} --live-stream python3 -m pip install jupyterlab==${DIB_JUPYTERLAB_VER}
 else
-    $(conda info --base)/bin/python3 -m pip install jupyterlab
+    conda run -n ${DIB_JUPYTERLAB_CONDA} --live-stream python3 -m pip install jupyterlab
 fi
 
-JP_PATH=$(conda run which jupyter)
+JP_PATH=$(conda run -n ${DIB_JUPYTERLAB_CONDA} which jupyter)
 
 # generate start scripts
 cat <<EOF >/usr/local/bin/start_jupyter_lab

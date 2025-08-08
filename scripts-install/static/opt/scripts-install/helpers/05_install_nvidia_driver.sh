@@ -20,8 +20,6 @@ install_nvidia_driver_deps() {
     sudo apt-get -y install build-essential dkms initramfs-tools
 }
 
-INSTALL_KERNEL="${INSTALL_KERNEL:-false}"
-
 install_kernel_headers() {
     # sudo apt-get -y install linux-headers-$(uname -r)
     local KERNEL_VERSION="$(ls /boot/vmlinuz*generic | sort -n | tail -n1 | cut -d'-' -f2-)"
@@ -42,10 +40,8 @@ EOF
 
 install_nvidia_driver() {
     install_nvidia_driver_deps
-    if [ "${INSTALL_KERNEL}" = "true" ]; then
-        install_kernel_headers
-        freeze_kernel_headers
-    fi
+    install_kernel_headers
+    freeze_kernel_headers
     setup_blacklist_nouveau
 
     if [ ! -f "${NVIDIA_DRIVER_FILE}" ]; then

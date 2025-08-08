@@ -16,7 +16,7 @@ check_kernel() {
 }
 
 install_kernel() {
-    sudo apt-get -y install build-essential linux-headers-$(uname -r) dkms
+    sudo apt-get -y install build-essential linux-image-$(uname -r) linux-headers-$(uname -r) dkms
 }
 
 freeze_kernel() {
@@ -24,9 +24,6 @@ freeze_kernel() {
     sudo apt-mark hold linux-image-generic linux-headers-generic
 }
 
-if [ "${INSTALL_KERNEL:-false}" = "true" ]; then
-    install_kernel
-    freeze_kernel
-else
-    check_kernel
-fi
+check_kernel
+install_kernel
+freeze_kernel

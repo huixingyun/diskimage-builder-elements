@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-instance_name=imgbuild2204
+instance_name=imgbuild2004
 
 cd "$(dirname "$0")"
 
@@ -17,7 +17,7 @@ if ! multipass list | grep -q $instance_name; then
     --cpus 4 --memory 8G --disk 80G \
     --mount $(pwd):/root/build \
     --cloud-init cloud-init.yaml \
-    22.04
+    20.04
 fi
 
 # attack the imgbuild vm

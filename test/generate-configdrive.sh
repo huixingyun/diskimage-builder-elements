@@ -48,7 +48,13 @@ users:
       - ${SSH_PUBKEY}
 
 # SSH configuration
-ssh_pwauth: false
+ssh_pwauth: true
+chpasswd:
+  expire: false
+  users:
+    - name: root
+      password: "123456"
+      type: text
 disable_root: false
 
 # Timezone setting

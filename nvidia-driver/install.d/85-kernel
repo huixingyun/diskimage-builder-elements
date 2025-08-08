@@ -9,6 +9,7 @@ check_kernel() {
     # comparing chroot kernel with host kernel
     CHROOT_KERNEL=$(dpkg -l | awk '/^.i +linux-(im)/&& $2~/[0-9]/{print substr($2,13)}')
     HOST_KERNEL=$(uname -r)
+    echo "CHROOT_KERNEL: $CHROOT_KERNEL, HOST_KERNEL: $HOST_KERNEL"
     if [ "$CHROOT_KERNEL" != "$HOST_KERNEL" ]; then
         echo "ERROR: kernel mismatch! CHROOT_KERNEL:$CHROOT_KERNEL HOST_KERNEL:$HOST_KERNEL"
         exit 1
@@ -16,7 +17,7 @@ check_kernel() {
 }
 
 install_kernel() {
-    sudo apt-get -y install build-essential linux-headers-$(uname -r) dkms
+    sudo apt-get -y install build-essential linux-image-$(uname -r) linux-headers-$(uname -r) dkms
 }
 
 freeze_kernel() {
@@ -24,9 +25,6 @@ freeze_kernel() {
     sudo apt-mark hold linux-image-generic linux-headers-generic
 }
 
-if [ "${INSTALL_KERNEL:-false}" = "true" ]; then
-    install_kernel
-    freeze_kernel
-else
-    check_kernel
-fi
+check_kernel
+install_kernel
+freeze_kernel
