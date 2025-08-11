@@ -115,6 +115,13 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Auto install qemu-system-x86_64 if not installed
+if ! command -v qemu-system-x86_64 &> /dev/null; then
+    echo "💡 Installing qemu-system-x86_64..."
+    sudo apt-get update
+    sudo apt-get install -y qemu-kvm qemu-utils
+fi
+
 # Start virtual machine
 qemu-system-x86_64 \
     -m $MEMORY \
@@ -122,6 +129,7 @@ qemu-system-x86_64 \
     -enable-kvm \
     -cpu host \
     -machine type=pc,accel=kvm \
+    -nodefaults \
     -drive file="$IMAGE_FILE",format=qcow2,if=virtio,cache=writeback \
     -drive file="$TMP_DIR/seed.iso",format=raw,if=virtio,readonly=on \
     -netdev user,id=net0,hostfwd=tcp::$SSH_PORT-:22 \

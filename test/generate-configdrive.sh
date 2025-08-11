@@ -72,6 +72,13 @@ cat >"$TMP_DIR/configdrive/openstack/latest/meta_data.json" <<EOL
 }
 EOL
 
+# Auto install genisoimage if not installed
+if ! command -v genisoimage &>/dev/null; then
+  echo "💡 Installing genisoimage..."
+  sudo apt-get update
+  sudo apt-get install -y genisoimage
+fi
+
 # Generate ConfigDrive ISO image
 echo "Generating ConfigDrive ISO image..."
 if command -v genisoimage &>/dev/null; then

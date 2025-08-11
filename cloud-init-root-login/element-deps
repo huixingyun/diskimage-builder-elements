@@ -1,4 +1,3 @@
 cloud-init-enable-root-login
 cloud-init-remove-default-users
 cloud-init-enable-ssh-pwauth
-cloud-init-ssh-permit-root-login
