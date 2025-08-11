@@ -1,6 +1,7 @@
 cloud-init-root-login
 cloud-init-datasource-openstack
-cloud-init-ssh-keepalive
+ssh-permit-root-login
+ssh-keepalive
 qemu-guest-agent
 miniconda
 scripts-install
