@@ -10,9 +10,7 @@ echo ">> setup config openstack datasource for volcengine"
 
 # ref: https://www.volcengine.com/docs/6627/96125#_5-cloud-init%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE
 if [ -d /etc/cloud/cloud.cfg.d ]; then
-  cat >/etc/cloud/cloud.cfg.d/99-datasource-openstack-volc.cfg <<EOF
-datasource_list: [ConfigDrive, OpenStack]
-
+  cat >/etc/cloud/cloud.cfg.d/93-datasource-openstack-volc.cfg <<EOF
 datasource:
   OpenStack:
     metadata_urls: ["http://100.96.0.96","http://169.254.169.254"]

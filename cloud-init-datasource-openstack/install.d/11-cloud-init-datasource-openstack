@@ -10,8 +10,6 @@ echo ">> setup config openstack datasource"
 
 if [ -d /etc/cloud/cloud.cfg.d ]; then
   cat >/etc/cloud/cloud.cfg.d/92-datasource-openstack.cfg <<EOF
-datasource_list: [ConfigDrive, OpenStack]
-
 datasource:
   OpenStack:
     metadata_urls: ["http://169.254.169.254"]
