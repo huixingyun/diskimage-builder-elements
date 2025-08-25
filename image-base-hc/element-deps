@@ -9,3 +9,4 @@ setup-timezone
 setup-motd
 remove-unattended-upgrades
 hcp
+package-installs

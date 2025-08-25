@@ -1,0 +1,17 @@
+#!/bin/bash
+
+cat << EOF >/etc/systemd/system/nvidia-pm.service
+[Unit]
+Description=Enable NVIDIA GPU Persistence Mode
+After=syslog.target systemd-modules-load.service
+Requires=nvidia-persistenced.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/nvidia-smi -pm 1
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload && systemctl enable nvidia-pm.service
